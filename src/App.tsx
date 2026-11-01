@@ -1,135 +1,156 @@
-import { useState, useMemo } from 'react';
-import { Market, ArbitrageOpportunity } from './types';
+import { useState, useMemo, useCallback } from 'react';
+import { Market, ArbitrageOpportunity, Filters } from './types';
 import { mockMarkets } from './data/mockData';
 import { findArbitrageOpportunities, analyzeAllMarkets } from './utils/detector';
-import { generateTextReport, generateJsonReport } from './utils/reporter';
-import { Dashboard } from './components/Dashboard';
-import { ReportView } from './components/ReportView';
-import { CodeViewer } from './components/CodeViewer';
-import { AllMarketsView } from './components/AllMarketsView';
-
-type Tab = 'dashboard' | 'all-markets' | 'report' | 'code';
+import { Header } from './components/Header';
+import { MetricCards } from './components/MetricCards';
+import { FiltersPanel } from './components/FiltersPanel';
+import { OpportunitiesTable } from './components/OpportunitiesTable';
+import { EdgeChart } from './components/EdgeChart';
+import { MarketDetail } from './components/MarketDetail';
 
 export default function App() {
-  const [threshold, setThreshold] = useState(0.15);
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
-  const [reportFormat, setReportFormat] = useState<'text' | 'json'>('text');
+  const [filters, setFilters] = useState<Filters>({
+    category: 'all',
+    minVolume: 0,
+    minEdge: 0.10,
+    sortBy: 'edge',
+    sortDir: 'desc',
+  });
+  const [selectedMarketId, setSelectedMarketId] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [lastScanTime, setLastScanTime] = useState<string>(new Date().toLocaleTimeString('ru-RU'));
+  const [scanCount, setScanCount] = useState(0);
 
   // Анализ всех рынков
-  const allAnalysis = useMemo(() => analyzeAllMarkets(mockMarkets), []);
+  const allAnalysis = useMemo(() => analyzeAllMarkets(mockMarkets), [scanCount]);
 
-  // Поиск арбитражных возможностей
-  const opportunities = useMemo(
-    () => findArbitrageOpportunities(mockMarkets, threshold),
-    [threshold]
+  // Все возможности (без фильтра по порогу — фильтруем в UI)
+  const allOpportunities = useMemo(
+    () => findArbitrageOpportunities(mockMarkets, 0.01),
+    [scanCount]
   );
 
-  // Генерация отчёта
-  const reportText = useMemo(() => {
-    if (reportFormat === 'json') {
-      return generateJsonReport(opportunities);
-    }
-    return generateTextReport(opportunities);
-  }, [opportunities, reportFormat]);
+  // Фильтрация и сортировка
+  const filteredOpportunities = useMemo(() => {
+    let result = allOpportunities.filter(opp => {
+      if (filters.category !== 'all' && opp.market.category !== filters.category) return false;
+      if (opp.market.volume < filters.minVolume) return false;
+      if (Math.abs(opp.edge) < filters.minEdge) return false;
+      return true;
+    });
+
+    // Сортировка
+    result.sort((a, b) => {
+      let valA: number, valB: number;
+      switch (filters.sortBy) {
+        case 'edge':
+          valA = Math.abs(a.edge); valB = Math.abs(b.edge); break;
+        case 'volume':
+          valA = a.market.volume; valB = b.market.volume; break;
+        case 'market_price':
+          valA = a.market.implied_probability; valB = b.market.implied_probability; break;
+        case 'oracle_price':
+          valA = a.oracle.oracle_probability; valB = b.oracle.oracle_probability; break;
+        case 'expiry':
+          valA = a.oracle.daysToExpiry || 9999; valB = b.oracle.daysToExpiry || 9999; break;
+        default:
+          valA = Math.abs(a.edge); valB = Math.abs(b.edge);
+      }
+      return filters.sortDir === 'desc' ? valB - valA : valA - valB;
+    });
+
+    return result;
+  }, [allOpportunities, filters]);
+
+  // Метрики
+  const metrics = useMemo(() => {
+    const totalMarkets = mockMarkets.length;
+    const opportunities = filteredOpportunities.length;
+    const avgEdge = opportunities > 0
+      ? filteredOpportunities.reduce((s, o) => s + Math.abs(o.edge), 0) / opportunities
+      : 0;
+    const totalVolume = filteredOpportunities.reduce((s, o) => s + o.market.volume, 0);
+    const highSeverity = filteredOpportunities.filter(o => o.severity === 'high').length;
+    const buyYes = filteredOpportunities.filter(o => o.recommendation === 'BUY YES').length;
+    const buyNo = filteredOpportunities.filter(o => o.recommendation === 'BUY NO').length;
+
+    return { totalMarkets, opportunities, avgEdge, totalVolume, highSeverity, buyYes, buyNo };
+  }, [filteredOpportunities]);
+
+  // Обработчик обновления
+  const handleRefresh = useCallback(() => {
+    setIsScanning(true);
+    // Имитация задержки сканирования
+    setTimeout(() => {
+      setScanCount(c => c + 1);
+      setLastScanTime(new Date().toLocaleTimeString('ru-RU'));
+      setIsScanning(false);
+    }, 1500);
+  }, []);
+
+  // Выбранный рынок для детального просмотра
+  const selectedMarket = selectedMarketId
+    ? allAnalysis.find(a => a.market.id === selectedMarketId)
+    : null;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-xl">
-                🔍
-              </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  PolyArb Scanner
-                </h1>
-                <p className="text-xs text-gray-500">Сканер арбитражных возможностей на предиктивных рынках</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-[#0a0a0f] text-gray-100">
+      <Header
+        lastScanTime={lastScanTime}
+        isScanning={isScanning}
+        onRefresh={handleRefresh}
+        totalMarkets={metrics.totalMarkets}
+        opportunities={metrics.opportunities}
+      />
 
-            {/* Controls */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-400">Порог edge:</label>
-                <input
-                  type="range"
-                  min="0.05"
-                  max="0.40"
-                  step="0.01"
-                  value={threshold}
-                  onChange={(e) => setThreshold(parseFloat(e.target.value))}
-                  className="w-24 accent-emerald-500"
-                />
-                <span className="text-sm font-mono text-emerald-400 w-10">
-                  {(threshold * 100).toFixed(0)}%
-                </span>
-              </div>
-              <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
-                <span className="text-xs text-gray-500 px-2">Режим:</span>
-                <span className="text-xs bg-emerald-900/50 text-emerald-400 px-2 py-0.5 rounded">
-                  MOCK DATA
-                </span>
-              </div>
-            </div>
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Metric Cards */}
+        <MetricCards metrics={metrics} />
+
+        {/* Main Grid: Filters + Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 mt-6">
+          {/* Filters Sidebar */}
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <FiltersPanel filters={filters} onFiltersChange={setFilters} />
+          </aside>
+
+          {/* Main Content */}
+          <div className="space-y-6">
+            {/* Opportunities Table */}
+            <OpportunitiesTable
+              opportunities={filteredOpportunities}
+              filters={filters}
+              onFiltersChange={setFilters}
+              onSelectMarket={setSelectedMarketId}
+              selectedMarketId={selectedMarketId}
+            />
+
+            {/* Edge Chart */}
+            <EdgeChart
+              marketId={selectedMarketId || (filteredOpportunities[0]?.market.id ?? null)}
+              markets={mockMarkets}
+              onSelectMarket={setSelectedMarketId}
+            />
+
+            {/* Market Detail */}
+            {selectedMarket && (
+              <MarketDetail
+                market={selectedMarket.market}
+                oracle={selectedMarket.oracle}
+                edge={selectedMarket.edge}
+                onClose={() => setSelectedMarketId(null)}
+              />
+            )}
           </div>
-
-          {/* Tabs */}
-          <nav className="flex gap-1 mt-4">
-            {[
-              { id: 'dashboard' as Tab, label: '🔥 Возможности', count: opportunities.length },
-              { id: 'all-markets' as Tab, label: '📊 Все рынки', count: mockMarkets.length },
-              { id: 'report' as Tab, label: '📋 Отчёт' },
-              { id: 'code' as Tab, label: '💻 Python код' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-t-lg text-sm font-medium transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-gray-800 text-emerald-400 border-b-2 border-emerald-500'
-                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
-                }`}
-              >
-                {tab.label}
-                {tab.count !== undefined && (
-                  <span className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${
-                    activeTab === tab.id ? 'bg-emerald-900/50 text-emerald-400' : 'bg-gray-700 text-gray-400'
-                  }`}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </nav>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        {activeTab === 'dashboard' && (
-          <Dashboard opportunities={opportunities} threshold={threshold} />
-        )}
-        {activeTab === 'all-markets' && (
-          <AllMarketsView analysis={allAnalysis} threshold={threshold} />
-        )}
-        {activeTab === 'report' && (
-          <ReportView
-            reportText={reportText}
-            format={reportFormat}
-            onFormatChange={setReportFormat}
-          />
-        )}
-        {activeTab === 'code' && <CodeViewer />}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 mt-12 py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-600">
-          <p>⚠️ Это демонстрационная версия. Не является финансовым советом.</p>
-          <p className="mt-1">PolyArb Scanner v1.0 • Mock Data Mode • {new Date().getFullYear()}</p>
+      <footer className="border-t border-gray-800/50 mt-12 py-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs text-gray-600">
+          <p>PolyArb Scanner v2.0 • Mock Data Mode</p>
+          <p>⚠️ Не является финансовым советом</p>
         </div>
       </footer>
     </div>

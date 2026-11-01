@@ -2,12 +2,8 @@ import { ArbitrageOpportunity, ScanResult } from '../types';
 
 /**
  * Модуль "Отчёт" (Reporter)
- * Генерирует текстовые и визуальные отчёты о найденных возможностях
  */
 
-/**
- * Генерирует текстовый отчёт (для копирования в консоль)
- */
 export function generateTextReport(opportunities: ArbitrageOpportunity[]): string {
   if (opportunities.length === 0) {
     return '⚠️ Арбитражных возможностей не обнаружено при текущем пороге.';
@@ -44,9 +40,6 @@ export function generateTextReport(opportunities: ArbitrageOpportunity[]): strin
   return lines.join('\n');
 }
 
-/**
- * Генерирует JSON-отчёт
- */
 export function generateJsonReport(opportunities: ArbitrageOpportunity[]): string {
   const report = {
     timestamp: new Date().toISOString(),
@@ -54,6 +47,7 @@ export function generateJsonReport(opportunities: ArbitrageOpportunity[]): strin
     opportunities: opportunities.map(opp => ({
       market_id: opp.market.id,
       question: opp.market.question,
+      category: opp.market.category,
       market_probability: opp.market.implied_probability,
       oracle_probability: opp.oracle.oracle_probability,
       edge: opp.edge,
@@ -66,9 +60,6 @@ export function generateJsonReport(opportunities: ArbitrageOpportunity[]): strin
   return JSON.stringify(report, null, 2);
 }
 
-/**
- * Форматирует объём для отображения
- */
 function formatVolume(volume: number): string {
   if (volume >= 1_000_000) {
     return `${(volume / 1_000_000).toFixed(2)}M`;
@@ -78,18 +69,17 @@ function formatVolume(volume: number): string {
   return volume.toFixed(0);
 }
 
-/**
- * Создаёт объект ScanResult
- */
 export function createScanResult(
   totalMarkets: number,
   opportunities: ArbitrageOpportunity[],
-  errors: string[] = []
+  errors: string[] = [],
+  scanDurationMs: number = 0
 ): ScanResult {
   return {
     timestamp: new Date().toISOString(),
     totalMarkets,
     opportunities,
     errors,
+    scanDurationMs,
   };
 }

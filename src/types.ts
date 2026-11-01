@@ -1,5 +1,7 @@
 // Типы данных для сканера арбитражных возможностей
 
+export type MarketCategory = 'crypto' | 'politics' | 'sports' | 'culture';
+
 export interface Market {
   id: string;
   question: string;
@@ -7,9 +9,11 @@ export interface Market {
   implied_probability: number;
   volume: number;
   timestamp: string;
+  category: MarketCategory;
   asset?: string;
   strikePrice?: number;
   expiryDate?: string;
+  endDate?: string;
 }
 
 export interface OracleResult {
@@ -30,11 +34,24 @@ export interface ArbitrageOpportunity {
   severity: 'high' | 'medium' | 'low';
 }
 
-export interface AppConfig {
-  threshold: number;
-  mockMode: boolean;
-  outputFormat: 'visual' | 'json' | 'text';
-  saveHistory: boolean;
+export interface EdgeHistoryPoint {
+  date: string;
+  edge: number;
+  marketPrice: number;
+  oraclePrice: number;
+}
+
+export interface EdgeHistory {
+  marketId: string;
+  points: EdgeHistoryPoint[];
+}
+
+export interface Filters {
+  category: MarketCategory | 'all';
+  minVolume: number;
+  minEdge: number;
+  sortBy: 'edge' | 'volume' | 'market_price' | 'oracle_price' | 'expiry';
+  sortDir: 'asc' | 'desc';
 }
 
 export interface ScanResult {
@@ -42,4 +59,5 @@ export interface ScanResult {
   totalMarkets: number;
   opportunities: ArbitrageOpportunity[];
   errors: string[];
+  scanDurationMs: number;
 }

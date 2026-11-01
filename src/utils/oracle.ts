@@ -3,28 +3,29 @@ import { mockCurrentPrices } from '../data/mockData';
 
 /**
  * Модуль "Оракул" — вычисляет "объективную" вероятность
- * на основе текущей цены актива и времени до экспирации.
- * 
- * В реальной версии здесь были бы вызовы Binance API.
- * В веб-версии используем мок-данные.
  */
 
-// Конфигурация оракула
 const ORACLE_CONFIG = {
-  // Волатильность актива (годовая, для модели)
   volatility: {
     BTC: 0.65,
     ETH: 0.80,
     SOL: 1.10,
   } as Record<string, number>,
-  // Минимальное расстояние для уверенности
+  // "Объективные" вероятности для некрипто-рынков (мок)
+  oracleOverrides: {
+    'us-pres-2028': 0.08,
+    'eu-parliament-2026': 0.82,
+    'uk-election-2029': 0.45,
+    'nba-finals-2026': 0.56,
+    'world-cup-2026': 0.10,
+    'superbowl-2027': 0.37,
+    'oscar-2027': 0.05,
+    'tesla-robotaxi': 0.65,
+  } as Record<string, number>,
   minConfidence: 0.3,
   maxConfidence: 0.95,
 };
 
-/**
- * Парсит вопрос рынка и извлекает ключевые параметры
- */
 export function parseMarketQuestion(question: string): {
   asset: string | null;
   strikePrice: number | null;
@@ -38,11 +39,10 @@ export function parseMarketQuestion(question: string): {
     expiryDate: null as Date | null,
   };
 
-  // Определяем актив
   const assetPatterns: Record<string, RegExp> = {
     BTC: /bitcoin|btc/i,
-    ETH: /ethereum|eth/i,
-    SOL: /solana|sol/i,
+    ETH: /ethereum|eth(?!ereum)/i,
+    SOL: /solana|(?<!\w)sol(?!\w)/i,
   };
 
   for (const [asset, pattern] of Object.entries(assetPatterns)) {
@@ -52,23 +52,10 @@ export function parseMarketQuestion(question: string): {
     }
   }
 
-  // Определяем направление
   if (/below|drop|under|less than/i.test(question)) {
     result.direction = 'below';
   }
 
-  // Извлекаем ценовой порог
-  const priceMatch = question.match(/\$?([\d,]+(?:\.\d+)?)\s*(?:k|K|thousand)?/);
-  if (priceMatch) {
-    let price = parseFloat(priceMatch[1].replace(/,/g, ''));
-    // Если есть "k" после числа
-    if (/k|K|thousand/i.test(question.substring(priceMatch.index || 0, (priceMatch.index || 0) + 10))) {
-      price *= 1000;
-    }
-    result.strikePrice = price;
-  }
-
-  // Более точный парсинг цен с $
   const dollarMatch = question.match(/\$\s*([\d,]+(?:\.\d+)?)\s*(k|K)?/);
   if (dollarMatch) {
     let price = parseFloat(dollarMatch[1].replace(/,/g, ''));
@@ -76,7 +63,6 @@ export function parseMarketQuestion(question: string): {
     result.strikePrice = price;
   }
 
-  // Извлекаем дату
   const monthMap: Record<string, number> = {
     jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
     jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
@@ -92,29 +78,44 @@ export function parseMarketQuestion(question: string): {
     result.expiryDate = new Date(year, month, day);
   }
 
-  // Альтернативный формат даты: "end of 2026", "December 2026"
-  const yearMatch = question.match(/(end of|by)\s*(\d{4})/i);
-  if (yearMatch && !result.expiryDate) {
-    const year = parseInt(yearMatch[2]);
-    result.expiryDate = new Date(year, 11, 31);
+  if (!result.expiryDate) {
+    const yearMatch = question.match(/(end of|by)\s*(\d{4})/i);
+    if (yearMatch) {
+      const year = parseInt(yearMatch[2]);
+      result.expiryDate = new Date(year, 11, 31);
+    }
   }
 
   return result;
 }
 
-/**
- * Вычисляет "объективную" вероятность с использованием
- * упрощенной модели логистического распределения.
- * 
- * Учитывает:
- * - Расстояние текущей цены от страйка
- * - Волатильность актива
- * - Время до экспирации
- */
 export function getRealWorldProbability(market: Market): OracleResult {
+  // Проверка на предопределённые вероятности для некрипто-рынков
+  if (ORACLE_CONFIG.oracleOverrides[market.id] !== undefined) {
+    const oracleProb = ORACLE_CONFIG.oracleOverrides[market.id];
+    const edge = oracleProb - market.implied_probability;
+    const confidence = Math.min(0.95, Math.max(0.3, Math.abs(edge) * 2 + 0.4));
+    
+    let reasoning = '';
+    if (Math.abs(edge) > 0.1) {
+      reasoning = `Анализ внешних данных показывает вероятность ~${(oracleProb * 100).toFixed(0)}%. Рынок оценивает в ${(market.implied_probability * 100).toFixed(0)}%.`;
+    } else {
+      reasoning = `Внешние данные согласуются с ценой рынка. Вероятность ~${(oracleProb * 100).toFixed(0)}%.`;
+    }
+
+    return {
+      marketId: market.id,
+      oracle_probability: oracleProb,
+      confidence,
+      reasoning,
+      daysToExpiry: market.expiryDate
+        ? Math.max(1, Math.ceil((new Date(market.expiryDate).getTime() - Date.now()) / 86400000))
+        : 365,
+    };
+  }
+
   const parsed = parseMarketQuestion(market.question);
   
-  // Если не удалось распарсить — возвращаем нейтральный результат
   if (!parsed.asset || !parsed.strikePrice) {
     return {
       marketId: market.id,
@@ -128,44 +129,31 @@ export function getRealWorldProbability(market: Market): OracleResult {
   const strikePrice = parsed.strikePrice;
   const volatility = ORACLE_CONFIG.volatility[parsed.asset] || 0.7;
 
-  // Вычисляем дни до экспирации
   const now = new Date();
-  let daysToExpiry = 365; // по умолчанию
+  let daysToExpiry = 365;
   if (parsed.expiryDate) {
     daysToExpiry = Math.max(1, Math.ceil(
       (parsed.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     ));
   }
 
-  // Расстояние в процентах от страйка
   const distancePct = (currentPrice - strikePrice) / strikePrice;
-
-  // Annualized volatility scaled to time period
   const timeScaledVol = volatility * Math.sqrt(daysToExpiry / 365);
-
-  // Z-score: насколько далеко текущая цена от страйка в единицах волатильности
   const zScore = distancePct / timeScaledVol;
 
-  // Логистическая функция (сигмоида) для преобразования z-score в вероятность
   let probability: number;
   if (parsed.direction === 'above') {
-    // Вероятность того, что цена БУДЕТ выше страйка
     probability = 1 / (1 + Math.exp(-zScore * 1.5));
   } else {
-    // Вероятность того, что цена БУДЕТ ниже страйка
     probability = 1 / (1 + Math.exp(zScore * 1.5));
   }
 
-  // Ограничиваем диапазон
   probability = Math.max(0.02, Math.min(0.98, probability));
-
-  // Уверенность зависит от расстояния и времени
   const confidence = Math.min(
     ORACLE_CONFIG.maxConfidence,
     Math.max(ORACLE_CONFIG.minConfidence, Math.abs(zScore) * 0.3 + 0.3)
   );
 
-  // Формируем объяснение
   let reasoning = '';
   if (parsed.direction === 'above') {
     if (currentPrice > strikePrice) {
@@ -177,7 +165,7 @@ export function getRealWorldProbability(market: Market): OracleResult {
     if (currentPrice < strikePrice) {
       reasoning = `Текущая цена ${parsed.asset} ($${currentPrice.toLocaleString()}) УЖЕ ниже порога $${strikePrice.toLocaleString()}. До экспирации ${daysToExpiry} дней.`;
     } else {
-      reasoning = `Текущая цена ${parsed.asset} ($${currentPrice.toLocaleString()}) выше порога $${strikePrice.toLocaleString()} на ${(distancePct * 100).toFixed(1)}%. Цена должна упасть. До экспирации ${daysToExpiry} дней.`;
+      reasoning = `Текущая цена ${parsed.asset} ($${currentPrice.toLocaleString()}) выше порога $${strikePrice.toLocaleString()} на ${(distancePct * 100).toFixed(1)}%. До экспирации ${daysToExpiry} дней.`;
     }
   }
 

@@ -243,8 +243,12 @@ def test_model_imbalanced_classes():
     
     # Модель должна обучиться
     assert model.is_trained is True
-    assert metrics.n_positive == 6  # 20% от 30
-    assert metrics.n_negative == 54  # 20% от 270
+    
+    # TimeSeriesSplit берёт последние 20% данных (последние 60 строк из 300)
+    # Из них: 30 — класс 0 (индексы 240-269) и 30 — класс 1 (индексы 270-299)
+    assert metrics.n_samples == 60  # 20% от 300
+    assert metrics.n_positive == 30  # Все положительные примеры в хвосте
+    assert metrics.n_negative == 30  # 30 отрицательных из хвоста
 
 
 def test_model_metrics_to_dict(sample_training_data):

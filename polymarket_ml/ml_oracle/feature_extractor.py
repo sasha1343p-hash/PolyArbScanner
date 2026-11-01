@@ -406,6 +406,9 @@ class FeatureExtractor:
                 'rsi': 50.0,
             }
         
+        # Клиппинг цен в диапазон [0, 1] для вероятностей
+        prices = np.clip(prices, 0.0, 1.0)
+        
         # Расстояние от 52w high/low (используем всё доступное как прокси)
         high = np.max(prices)
         low = np.min(prices)

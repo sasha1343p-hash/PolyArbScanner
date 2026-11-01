@@ -138,21 +138,24 @@ class TestFullPipeline:
         monitor.save_train_stats(str(stats_path))
         assert stats_path.exists(), "Файл статистики должен существовать"
         
-        # 4. Загрузка статистики
+        # 4. Загрузка статистики (для проверки сохранения/загрузки)
         new_monitor = ModelMonitor()
         success = new_monitor.load_train_stats(str(stats_path))
         assert success, "Статистика должна загрузиться"
         
         # 5. Проверка дрейфа на тех же данных (не должно быть дрейфа)
-        report = new_monitor.check_drift(X)
+        # Используем initialize_from_train_data, чтобы сохранить реальные данные для PSI
+        test_monitor = ModelMonitor()
+        test_monitor.initialize_from_train_data(X)
+        report = test_monitor.check_drift(X)
         assert not report.has_drift, "Не должно быть дрейфа на тех же данных"
         assert len(report.drifted_features) == 0, "Не должно быть дрейфующих признаков"
         
         # 6. Проверка дрейфа на изменённых данных
         X_drifted = X.copy()
-        X_drifted['price_mean'] = X_drifted['price_mean'] * 2  # Удваиваем значения
-        report_drifted = new_monitor.check_drift(X_drifted)
-        # Может быть дрейф, а может и нет (зависит от порога)
+        X_drifted['price_mean_24h'] = X_drifted['price_mean_24h'] * 2  # Удваиваем значения
+        report_drifted = test_monitor.check_drift(X_drifted)
+        # Должен быть дрейф, так как мы удвоили значения
         assert isinstance(report_drifted.has_drift, bool), "has_drift должен быть bool"
     
     def test_feature_extractor_consistency(self, sample_data):

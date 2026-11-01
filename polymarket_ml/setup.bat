@@ -3,184 +3,108 @@ chcp 65001 >nul
 setlocal EnableDelayedExpansion
 
 echo.
-echo ╔═══════════════════════════════════════════════════════════╗
-echo ║                                                           ║
-echo ║   🚀 PolyArb ML Oracle — Автоматическая установка        ║
-echo ║                                                           ║
-echo ╚═══════════════════════════════════════════════════════════╝
+echo ============================================================
+echo   PolyArb ML Oracle - Installation
+echo ============================================================
 echo.
 
-REM ============================================
-REM ШАГ 1: Проверка Python
-REM ============================================
-echo [1/7] Проверка Python...
+REM Step 1: Check Python
+echo [1/6] Checking Python...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo.
-    echo ❌ ОШИБКА: Python не найден!
-    echo.
-    echo Скачайте и установите Python 3.10+ с:
-    echo https://www.python.org/downloads/
-    echo.
-    echo ВАЖНО: При установке отметьте "Add Python to PATH"
+    echo ERROR: Python not found!
+    echo Download from: https://www.python.org/downloads/
+    echo IMPORTANT: Check "Add Python to PATH" during install
     echo.
     pause
     exit /b 1
 )
+echo OK - Python found
 
-for /f "tokens=2 delims= " %%v in ('python --version 2^>^&1') do set PYTHON_VERSION=%%v
-echo ✅ Python %PYTHON_VERSION% найден
-
-REM ============================================
-REM ШАГ 2: Создание виртуального окружения
-REM ============================================
+REM Step 2: Create virtual environment
 echo.
-echo [2/7] Создание виртуального окружения...
-
+echo [2/6] Creating virtual environment...
 if exist "venv" (
-    echo ✅ Виртуальное окружение уже существует
+    echo OK - venv already exists
 ) else (
     python -m venv venv
     if errorlevel 1 (
-        echo ❌ ОШИБКА: Не удалось создать виртуальное окружение
+        echo ERROR: Failed to create venv
         pause
         exit /b 1
     )
-    echo ✅ Виртуальное окружение создано
+    echo OK - venv created
 )
 
-REM ============================================
-REM ШАГ 3: Активация окружения
-REM ============================================
+REM Step 3: Activate environment
 echo.
-echo [3/7] Активация окружения...
+echo [3/6] Activating environment...
 call venv\Scripts\activate.bat
+echo OK - activated
+
+REM Step 4: Install dependencies
+echo.
+echo [4/6] Installing dependencies (2-5 min)...
+python -m pip install --upgrade pip >nul 2>&1
+pip install xgboost lightgbm scikit-learn pandas numpy scipy joblib pyyaml pytest
 if errorlevel 1 (
-    echo ❌ ОШИБКА: Не удалось активировать окружение
-    echo Попробуйте: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+    echo ERROR: Failed to install dependencies
     pause
     exit /b 1
 )
-echo ✅ Окружение активировано
+echo. > .deps_installed
+echo OK - dependencies installed
 
-REM ============================================
-REM ШАГ 4: Установка зависимостей
-REM ============================================
+REM Step 5: Verify installation
 echo.
-echo [4/7] Установка зависимостей...
-
-if exist ".deps_installed" (
-    echo ✅ Зависимости уже установлены
-) else (
-    echo Установка может занять 2-5 минут...
-    echo.
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-    if errorlevel 1 (
-        echo ❌ ОШИБКА: Не удалось установить зависимости
-        pause
-        exit /b 1
-    )
-    echo. > .deps_installed
-    echo ✅ Зависимости установлены
-)
-
-REM ============================================
-REM ШАГ 5: Проверка установки
-REM ============================================
-echo.
-echo [5/7] Проверка установки...
-python -c "import xgboost; import lightgbm; import sklearn; import pandas; import numpy" 2>nul
+echo [5/6] Verifying installation...
+python -c "import xgboost; import lightgbm; import sklearn; import pandas; import numpy; print('OK - all libraries installed')"
 if errorlevel 1 (
-    echo ❌ ОШИБКА: Не все библиотеки установлены корректно
-    echo Попробуйте удалить папку venv и запустить установку заново
+    echo ERROR: Some libraries missing
     pause
     exit /b 1
 )
-echo ✅ Все библиотеки установлены
 
-REM ============================================
-REM ШАГ 6: Создание тестовой БД
-REM ============================================
+REM Step 6: Create test database
 echo.
-echo [6/7] Проверка базы данных...
-
+echo [6/6] Creating test database...
 if exist "..\polymarket_history.db" (
-    echo ✅ База данных найдена
+    echo OK - database already exists
 ) else (
-    echo ⚠️  База данных не найдена, создаю тестовую...
     python create_test_db.py
     if errorlevel 1 (
-        echo ❌ ОШИБКА: Не удалось создать тестовую БД
+        echo ERROR: Failed to create database
         pause
         exit /b 1
     )
-    echo ✅ Тестовая база данных создана
+    echo OK - database created
 )
 
-REM ============================================
-REM ШАГ 7: Обучение модели
-REM ============================================
 echo.
-echo [7/7] Обучение модели...
-
-if exist "artifacts\ml_oracle_bundle.pkl" (
-    echo ✅ Модель уже обучена
-    echo.
-    set /p RETRAIN="Хотите переобучить модель? (y/n): "
-    if /i not "!RETRAIN!"=="y" goto :SKIP_TRAIN
-)
-
-echo Обучение может занять 3-5 минут...
+echo ============================================================
+echo   INSTALLATION COMPLETE!
+echo ============================================================
 echo.
-python ml_oracle.py train
-if errorlevel 1 (
-    echo ❌ ОШИБКА: Не удалось обучить модель
-    pause
-    exit /b 1
-)
-echo ✅ Модель обучена
-
-:SKIP_TRAIN
-
-REM ============================================
-REM ГОТОВО!
-REM ============================================
+echo Next steps:
 echo.
-echo ╔═══════════════════════════════════════════════════════════╗
-echo ║                                                           ║
-echo ║   ✅ УСТАНОВКА ЗАВЕРШЕНА УСПЕШНО!                        ║
-echo ║                                                           ║
-echo ╚═══════════════════════════════════════════════════════════╝
+echo   1. Train model:
+echo      python ml_oracle.py train
 echo.
-echo 📊 Доступные команды:
-echo.
-echo   1. Предсказание для рынка:
+echo   2. Make prediction:
 echo      python ml_oracle.py predict market-001
 echo.
-echo   2. Проверка дрейфа:
-echo      python ml_oracle.py drift-check
-echo.
-echo   3. Важность признаков:
-echo      python ml_oracle.py feature-importance
-echo.
-echo   4. Запуск веб-дашборда:
-echo      cd .. ^&^& serve dist
-echo.
-echo   5. Быстрый запуск всего:
+echo   3. Start everything:
 echo      start_all.bat
 echo.
-echo ═══════════════════════════════════════════════════════════
+echo ============================================================
 echo.
 
-REM Предложение сделать тестовое предсказание
-set /p TEST="Хотите сделать тестовое предсказание? (y/n): "
-if /i "%TEST%"=="y" (
+set /p TRAIN="Train model now? (y/n): "
+if /i "%TRAIN%"=="y" (
     echo.
-    echo Запускаю предсказание для market-001...
-    echo.
-    python ml_oracle.py predict market-001
-    echo.
+    python ml_oracle.py train
 )
 
+echo.
 pause

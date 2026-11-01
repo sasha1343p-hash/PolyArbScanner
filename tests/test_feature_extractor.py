@@ -16,7 +16,7 @@ def sample_price_df():
     n = 200
     
     return pd.DataFrame({
-        'timestamp': pd.date_range('2024-01-01', periods=n, freq='H'),
+        'timestamp': pd.date_range('2024-01-01', periods=n, freq='h'),
         'yes_price': np.random.uniform(0.3, 0.7, n),
         'volume': np.random.uniform(1000, 10000, n),
         'liquidity': np.random.uniform(5000, 50000, n),
@@ -164,7 +164,7 @@ def test_extract_features_batch():
     
     price_df = pd.DataFrame({
         'market_id': ['market1'] * 100 + ['market2'] * 100,
-        'timestamp': list(pd.date_range('2024-01-01', periods=100, freq='H')) * 2,
+        'timestamp': list(pd.date_range('2024-01-01', periods=100, freq='h')) * 2,
         'yes_price': np.random.uniform(0.3, 0.7, 200),
         'volume': np.random.uniform(1000, 10000, 200),
         'liquidity': np.random.uniform(5000, 50000, 200),
@@ -194,7 +194,7 @@ def test_normalization():
     
     price_df = pd.DataFrame({
         'market_id': ['market1'] * 50 + ['market2'] * 50 + ['market3'] * 50,
-        'timestamp': list(pd.date_range('2024-01-01', periods=50, freq='H')) * 3,
+        'timestamp': list(pd.date_range('2024-01-01', periods=50, freq='h')) * 3,
         'yes_price': np.random.uniform(0.3, 0.7, 150),
         'volume': np.random.uniform(1000, 10000, 150),
     })

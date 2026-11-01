@@ -78,6 +78,7 @@ class ModelMonitor:
         """
         self.config = config or MonitorConfig()
         self.train_stats: Optional[Dict] = None
+        self.train_data: Optional[Dict[str, np.ndarray]] = None
         self.is_initialized: bool = False
         
         logger.info("ModelMonitor инициализирован")
@@ -92,9 +93,13 @@ class ModelMonitor:
         logger.info("Инициализация статистики из обучающей выборки")
         
         self.train_stats = {}
+        self.train_data = {}
         
         for feature in X_train.columns:
             values = X_train[feature].values
+            
+            # Сохраняем реальные данные для PSI
+            self.train_data[feature] = values.copy()
             
             self.train_stats[feature] = {
                 'mean': float(np.mean(values)),
@@ -199,7 +204,12 @@ class ModelMonitor:
         return hist.tolist()
     
     def _reconstruct_distribution(self, feature: str) -> np.ndarray:
-        """Реконструирует распределение из статистики."""
+        """Возвращает реальные данные из обучающей выборки."""
+        # Используем реальные данные, если они сохранены
+        if self.train_data is not None and feature in self.train_data:
+            return self.train_data[feature]
+        
+        # Fallback: если реальные данные не сохранены, используем статистику
         if feature not in self.train_stats:
             return np.array([])
         

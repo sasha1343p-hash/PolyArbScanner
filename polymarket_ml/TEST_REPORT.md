@@ -13,8 +13,9 @@
 ```
 project_root/
 ├── tests/                           ← ОТДЕЛЬНАЯ ПАПКА ДЛЯ ТЕСТОВ
-│   ├── test_feature_extractor.py    # 15 unit-тестов
-│   ├── test_model.py                # 12 unit-тестов
+│   ├── test_feature_extractor.py    # 12 unit-тестов
+│   ├── test_model.py                # 13 unit-тестов
+│   ├── test_ensemble.py             # 6 unit-тестов
 │   ├── test_integration.py          # 10 интеграционных тестов
 │   ├── TESTING_GUIDE.md             # Подробное руководство
 │   ├── conftest.py                  # Конфигурация pytest
@@ -35,7 +36,7 @@ project_root/
 ## 🎯 Критерии приёмки
 
 Все тесты должны проходить:
-- ✅ **37 тестов проходят** (15 + 12 + 10)
+- ✅ **41 тест проходит** (31 unit + 10 интеграционных)
 - ✅ **Coverage > 80%**
 - ✅ **Время выполнения < 2 минуты**
 - ✅ **Нет критических ошибок**
@@ -58,7 +59,7 @@ pytest ../tests/ -v
 
 ### Только unit-тесты
 ```bash
-pytest ../tests/test_feature_extractor.py ../tests/test_model.py -v
+pytest ../tests/test_feature_extractor.py ../tests/test_model.py ../tests/test_ensemble.py -v
 ```
 
 ### Только интеграционные тесты
@@ -85,9 +86,9 @@ run_tests.bat
 
 ## 📊 Что проверяют тесты
 
-### Unit-тесты (27 тестов)
+### Unit-тесты (31 тест)
 
-#### `test_feature_extractor.py` (15 тестов)
+#### `test_feature_extractor.py` (12 тестов)
 - ✅ Извлечение статистик цен
 - ✅ Волатильность и тренд
 - ✅ Моментум и объём
@@ -97,7 +98,7 @@ run_tests.bat
 - ✅ Обработка пустых данных
 - ✅ Нормализация признаков
 
-#### `test_model.py` (12 тестов)
+#### `test_model.py` (13 тестов)
 - ✅ Обучение XGBoost
 - ✅ Обучение LightGBM
 - ✅ Метрики качества
@@ -107,6 +108,12 @@ run_tests.bat
 - ✅ Feature importance
 - ✅ Обработка NaN
 - ✅ Несбалансированные классы
+
+#### `test_ensemble.py` (6 тестов)
+- ✅ Конфигурация ансамбля
+- ✅ Эвристический оракул
+- ✅ Ансамбль только с эвристикой
+- ✅ Ансамбль без моделей
 
 ### Интеграционные тесты (10 тестов)
 
@@ -133,24 +140,25 @@ run_tests.bat
 ### Успешный запуск
 ```
 ============================= test session starts ==============================
-collected 37 items
+collected 41 items
 
-../tests/test_feature_extractor.py ...............                          [ 40%]
-../tests/test_model.py ............                                         [ 72%]
-../tests/test_integration.py .........                                      [ 97%]
+../tests/test_feature_extractor.py ............                            [ 29%]
+../tests/test_model.py .............                                       [ 60%]
+../tests/test_ensemble.py ......                                           [ 75%]
+../tests/test_integration.py .........                                     [ 97%]
 
 ---------- coverage: platform win32, python 3.11.5 ----------
 Name                                    Stmts   Miss  Cover   Missing
 ---------------------------------------------------------------------
-ml_oracle/__init__.py                       6      0   100%
-ml_oracle/feature_extractor.py            312     12    96%
-ml_oracle/model.py                        287     18    94%
-ml_oracle/monitor.py                      145      8    94%
-ml_oracle/ensemble.py                      98      5    95%
+ml_oracle/__init__.py                       7      0   100%
+ml_oracle/feature_extractor.py            266     46    83%
+ml_oracle/model.py                        315     49    84%
+ml_oracle/monitor.py                      124     15    88%
+ml_oracle/ensemble.py                      81     10    88%
 ---------------------------------------------------------------------
-TOTAL                                     848     43    95%
+TOTAL                                     793     120    85%
 
-============================== 37 passed in 45.23s ==============================
+============================== 41 passed in 90.23s ==============================
 ```
 
 ### Отчёт в JSON
@@ -158,26 +166,58 @@ TOTAL                                     848     43    95%
 {
   "timestamp": "2026-01-15T10:30:00",
   "prerequisites": {
-    "python": {"status": true, "details": "Python 3.11.5"},
+    "python": {"status": true, "details": "Python 3.13.15"},
     "venv": {"status": true, "details": "venv directory exists"},
     "dependencies": {"status": true, "details": "All dependencies installed"},
     "database": {"status": true, "details": "Database size: 2.5 MB"},
     "model": {"status": true, "details": "Model size: 15.3 MB"}
   },
   "tests": {
-    "unit_tests": {"status": true, "passed": 27, "failed": 0, "total": 27},
+    "unit_tests": {"status": true, "passed": 31, "failed": 0, "total": 31},
     "integration_tests": {"status": true, "passed": 10, "failed": 0, "total": 10},
-    "coverage": {"status": true, "percentage": 95.0}
+    "coverage": {"status": true, "percentage": 85.0}
   },
   "summary": {
     "all_checks_passed": true,
-    "total_tests": 37,
-    "passed_tests": 37,
+    "total_tests": 41,
+    "passed_tests": 41,
     "failed_tests": 0,
-    "coverage": 95.0
+    "coverage": 85.0
   }
 }
 ```
+
+---
+
+## 🔧 Исправленные проблемы
+
+### 1. pandas 3.1 несовместимость
+**Проблема:** `freq='H'` больше не работает в pandas 3.1  
+**Решение:** Заменено на `freq='h'` во всех тестах
+
+### 2. numpy 2 несовместимость
+**Проблема:** `isinstance(score, (int, float))` не работает с `np.float32`  
+**Решение:** Заменено на `hasattr(score, '__float__')`
+
+### 3. LightGBM на дисбалансе
+**Проблема:** LightGBM падает, если в фолде нет одного из классов  
+**Решение:** Добавлена проверка `len(set(y_train)) < 2` и пропуск таких фолдов
+
+### 4. Монитор дрейфа
+**Проблема:** Ложный PSI из-за генерации случайных данных  
+**Решение:** Сохраняются реальные данные из обучающей выборки в `train_data`
+
+### 5. price_current вне [0, 1]
+**Проблема:** Синтетические цены выходят за диапазон вероятностей  
+**Решение:** Добавлен `np.clip(prices, 0.0, 1.0)` в `_extract_price_statistics`
+
+### 6. test_edge_cases для pandas 3
+**Проблема:** Сравнение Series с разным индексом запрещено  
+**Решение:** Извлечение значения как скаляр через `.iloc[0]`
+
+### 7. ensemble.py не покрыт
+**Проблема:** Покрытие ensemble.py было 25%  
+**Решение:** Добавлен `test_ensemble.py` с 6 тестами
 
 ---
 
@@ -198,13 +238,6 @@ TOTAL                                     848     43    95%
 
 ### Ошибка: "ModuleNotFoundError: No module named 'ml_oracle'"
 **Решение:** Убедитесь, что вы находитесь в папке `polymarket_ml/` и виртуальное окружение активировано.
-
-```bash
-cd polymarket_ml
-venv\Scripts\activate  # Windows
-# или
-source venv/bin/activate  # Linux/Mac
-```
 
 ### Ошибка: "No such file or directory: '../tests/'"
 **Решение:** Тесты находятся в папке `tests/` на верхнем уровне проекта. Убедитесь, что структура проекта правильная.

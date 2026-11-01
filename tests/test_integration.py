@@ -236,16 +236,17 @@ class TestFullPipeline:
         
         # 2. Очень мало данных
         small_metadata = metadata_df.iloc[[0]].copy()
-        small_prices = price_df[price_df['market_id'] == small_metadata['id']].head(5)
+        small_market_id = small_metadata['id'].iloc[0]  # Извлекаем как скаляр
+        small_prices = price_df[price_df['market_id'] == small_market_id].head(5)
         
         small_meta = MarketMetadata(
-            id=small_metadata['id'].iloc[0],
+            id=small_market_id,
             question=small_metadata['question'].iloc[0],
             end_date=pd.Timestamp('2026-01-01'),
         )
         
         features_small = extractor.extract_features(
-            small_metadata['id'].iloc[0],
+            small_market_id,
             small_prices,
             small_meta
         )

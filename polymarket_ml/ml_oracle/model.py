@@ -89,8 +89,51 @@ class TrainingConfig:
     lgb_params: Dict[str, Any] = None
     lgb_enabled: bool = True
     
-    def __post_init__(self):
-        if self.xgb_params is None:
+    def __init__(self, **kwargs):
+        """Инициализация с поддержкой вложенных конфигов."""
+        self.test_size = kwargs.get('test_size', 0.2)
+        self.n_splits = kwargs.get('n_splits', 5)
+        self.random_state = kwargs.get('random_state', 42)
+        
+        # Обработка calibration
+        calibration = kwargs.get('calibration', {})
+        if isinstance(calibration, dict):
+            self.calibration_enabled = calibration.get('enabled', True)
+            self.calibration_method = calibration.get('method', 'isotonic')
+            self.calibration_cv = calibration.get('cv', 5)
+        else:
+            self.calibration_enabled = kwargs.get('calibration_enabled', True)
+            self.calibration_method = kwargs.get('calibration_method', 'isotonic')
+            self.calibration_cv = kwargs.get('calibration_cv', 5)
+        
+        # Обработка models
+        models = kwargs.get('models', {})
+        if isinstance(models, dict):
+            # XGBoost
+            xgb_config = models.get('xgboost', {})
+            if isinstance(xgb_config, dict):
+                self.xgb_enabled = xgb_config.get('enabled', True)
+                self.xgb_params = xgb_config.get('params', {})
+            else:
+                self.xgb_enabled = True
+                self.xgb_params = {}
+            
+            # LightGBM
+            lgb_config = models.get('lightgbm', {})
+            if isinstance(lgb_config, dict):
+                self.lgb_enabled = lgb_config.get('enabled', True)
+                self.lgb_params = lgb_config.get('params', {})
+            else:
+                self.lgb_enabled = True
+                self.lgb_params = {}
+        else:
+            self.xgb_enabled = kwargs.get('xgb_enabled', True)
+            self.xgb_params = kwargs.get('xgb_params', {})
+            self.lgb_enabled = kwargs.get('lgb_enabled', True)
+            self.lgb_params = kwargs.get('lgb_params', {})
+        
+        # Устанавливаем дефолтные параметры если они пустые
+        if not self.xgb_params:
             self.xgb_params = {
                 'n_estimators': 500,
                 'max_depth': 6,
@@ -103,10 +146,10 @@ class TrainingConfig:
                 'random_state': self.random_state,
                 'early_stopping_rounds': 50,
                 'eval_metric': 'auc',
-                'use_label_encoder': False,
+                'tree_method': 'hist',
             }
         
-        if self.lgb_params is None:
+        if not self.lgb_params:
             self.lgb_params = {
                 'n_estimators': 500,
                 'max_depth': 6,

@@ -26,7 +26,14 @@ class EnsembleConfig:
     heuristic_weight: float = 0.3
     min_confidence: float = 0.6
     
-    def __post_init__(self):
+    def __init__(self, **kwargs):
+        """Инициализация с поддержкой конфигов из YAML."""
+        self.use_ml = kwargs.get('use_ml', True)
+        self.use_heuristic = kwargs.get('use_heuristic', True)
+        self.ml_weight = kwargs.get('ml_weight', 0.7)
+        self.heuristic_weight = kwargs.get('heuristic_weight', 0.3)
+        self.min_confidence = kwargs.get('min_confidence', 0.6)
+        
         # Нормализуем веса
         total = self.ml_weight + self.heuristic_weight
         if total > 0:

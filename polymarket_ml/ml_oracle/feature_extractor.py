@@ -32,11 +32,19 @@ class MarketMetadata:
 @dataclass
 class FeatureConfig:
     """Конфигурация извлечения признаков."""
-    windows: List[int] = field(default_factory=lambda: [1, 6, 24, 168, 720])
-    volatility_windows: List[int] = field(default_factory=lambda: [24, 168, 720])
+    windows: List[int] = None
+    volatility_windows: List[int] = None
     rsi_period: int = 14
     normalize: bool = True
     scaler_type: str = "standard"
+    
+    def __init__(self, **kwargs):
+        """Инициализация с поддержкой конфигов из YAML."""
+        self.windows = kwargs.get('windows', [1, 6, 24, 168, 720])
+        self.volatility_windows = kwargs.get('volatility_windows', [24, 168, 720])
+        self.rsi_period = kwargs.get('rsi_period', 14)
+        self.normalize = kwargs.get('normalize', True)
+        self.scaler_type = kwargs.get('scaler_type', 'standard')
 
 
 class FeatureExtractor:

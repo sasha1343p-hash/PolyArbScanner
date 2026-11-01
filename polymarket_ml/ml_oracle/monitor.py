@@ -42,15 +42,18 @@ class MonitorConfig:
     key_features: List[str] = None
     check_interval_hours: int = 24
     
-    def __post_init__(self):
-        if self.key_features is None:
-            self.key_features = [
-                'price_mean_24h',
-                'price_std_24h',
-                'volume_mean_24h',
-                'momentum_24h',
-                'days_to_expiry',
-            ]
+    def __init__(self, **kwargs):
+        """Инициализация с поддержкой конфигов из YAML."""
+        self.psi_threshold = kwargs.get('psi_threshold', 0.2)
+        self.ks_threshold = kwargs.get('ks_threshold', 0.1)
+        self.check_interval_hours = kwargs.get('check_interval_hours', 24)
+        self.key_features = kwargs.get('key_features', [
+            'price_mean_24h',
+            'price_std_24h',
+            'volume_mean_24h',
+            'momentum_24h',
+            'days_to_expiry',
+        ])
 
 
 class ModelMonitor:

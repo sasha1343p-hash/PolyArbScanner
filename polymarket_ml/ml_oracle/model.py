@@ -159,7 +159,6 @@ class TrainingConfig:
                 'reg_lambda': 1.0,
                 'min_child_weight': 3,
                 'random_state': self.random_state,
-                'early_stopping_round': 50,
                 'verbose': -1,
             }
 
@@ -316,6 +315,8 @@ class MLOracle:
             scale_pos_weight = (y_train == 0).sum() / max((y_train == 1).sum(), 1)
             params = self.config.xgb_params.copy()
             params['scale_pos_weight'] = scale_pos_weight
+            # Убираем eval_metric из params (передаём отдельно в fit)
+            params.pop('eval_metric', None)
             
             model = xgb.XGBClassifier(**params)
             
@@ -340,7 +341,13 @@ class MLOracle:
         if best_model is not None:
             final_params = self.config.xgb_params.copy()
             final_params['scale_pos_weight'] = (y == 0).sum() / max((y == 1).sum(), 1)
+            # Убираем early stopping и eval_metric для финального обучения
+            final_params.pop('early_stopping_rounds', None)
+            final_params.pop('early_stopping_round', None)
+            final_params.pop('eval_metric', None)
             final_model = xgb.XGBClassifier(**final_params)
+            # Очищаем callbacks (они могли сохраниться от предыдущего fit)
+            final_model.callbacks = []
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 final_model.fit(X, y, verbose=False)
@@ -369,6 +376,8 @@ class MLOracle:
             scale_pos_weight = (y_train == 0).sum() / max((y_train == 1).sum(), 1)
             params = self.config.lgb_params.copy()
             params['scale_pos_weight'] = scale_pos_weight
+            # Убираем eval_metric из params (передаём отдельно в fit)
+            params.pop('eval_metric', None)
             
             model = lgb.LGBMClassifier(**params)
             
@@ -393,10 +402,16 @@ class MLOracle:
         if best_model is not None:
             final_params = self.config.lgb_params.copy()
             final_params['scale_pos_weight'] = (y == 0).sum() / max((y == 1).sum(), 1)
-            # Убираем early stopping для финального обучения
+            # Убираем early stopping и eval_metric для финального обучения
             final_params.pop('early_stopping_round', None)
             final_params.pop('early_stopping_rounds', None)
+            final_params.pop('eval_metric', None)
             final_model = lgb.LGBMClassifier(**final_params)
+            # Очищаем callbacks (они могли сохраниться от предыдущего fit)
+            if hasattr(final_model, 'callbacks'):
+                final_model.callbacks = []
+            if hasattr(final_model, 'eval_set'):
+                final_model.eval_set = None
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 final_model.fit(X, y)
@@ -415,12 +430,16 @@ class MLOracle:
         Использует cv='prefit' чтобы не переобучать модель,
         а только откалибровать её вероятности на данных.
         """
-        # Для XGBoost убираем early_stopping_rounds перед калибровкой
+        # Для XGBoost убираем early_stopping и callbacks перед калибровкой
         if hasattr(model, 'set_params'):
             try:
                 model.set_params(early_stopping_rounds=None)
             except Exception:
                 pass
+        
+        # Очищаем callbacks (они сохраняются от предыдущего fit)
+        if hasattr(model, 'callbacks'):
+            model.callbacks = []
         
         # Убираем eval_set если есть
         if hasattr(model, 'eval_set'):

@@ -234,6 +234,10 @@ class MLOracle:
         
         self.feature_names = feature_names or list(X.columns)
         
+        # Упорядочиваем колонки X согласно feature_names
+        # Это гарантирует согласованность порядка признаков
+        X = X[self.feature_names]
+        
         # Проверка баланса классов
         n_positive = y.sum()
         n_negative = len(y) - n_positive
@@ -279,9 +283,10 @@ class MLOracle:
         self.model_type = best_model_name
         self.is_trained = True
         
-        # Сохраняем статистику для оценки уверенности
-        self.train_mean = X.mean().values
-        self.train_std = X.std().values
+        # Сохраняем статистику для оценки уверенности в правильном порядке
+        # Используем self.feature_names для гарантии согласованности
+        self.train_mean = np.array([X[col].mean() for col in self.feature_names])
+        self.train_std = np.array([X[col].std() for col in self.feature_names])
         
         # Оценка на тестовой выборке (последние 20%)
         test_size = int(len(X) * self.config.test_size)
@@ -500,8 +505,12 @@ class MLOracle:
             return None
         
         try:
-            # Конвертируем в DataFrame
-            X = pd.DataFrame([features.values], columns=self.feature_names)
+            # Создаём DataFrame с правильным порядком признаков
+            # features может содержать признаки в любом порядке,
+            # поэтому создаём DataFrame с нужным порядком колонок
+            feature_dict = features.to_dict()
+            X_dict = {name: feature_dict.get(name, 0.0) for name in self.feature_names}
+            X = pd.DataFrame([X_dict], columns=self.feature_names)
             
             # Предсказание
             proba = self.model.predict_proba(X)[0, 1]
@@ -544,7 +553,10 @@ class MLOracle:
         
         try:
             # Mahalanobis-подобное расстояние (упрощённое)
-            x = features.values
+            # Создаём массив в правильном порядке признаков
+            feature_dict = features.to_dict()
+            x = np.array([feature_dict.get(name, 0.0) for name in self.feature_names])
+            
             z_scores = np.abs((x - self.train_mean) / (self.train_std + 1e-8))
             avg_z = np.mean(z_scores)
             

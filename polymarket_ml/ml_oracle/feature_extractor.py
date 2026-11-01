@@ -126,15 +126,32 @@ class FeatureExtractor:
         # 8. Контекстные фичи
         features.update(self._extract_context_features(metadata))
         
-        # Сохраняем названия фич
-        if not self.feature_names:
+        # Если feature_names уже установлен (например, из модели), используем его
+        if self.feature_names:
+            # Создаём Series с признаками в правильном порядке
+            sorted_features = {k: features.get(k, 0.0) for k in self.feature_names}
+            feature_series = pd.Series(sorted_features, name=market_id)
+        else:
+            # Сохраняем названия фич (отсортированные для согласованности)
             self.feature_names = sorted(features.keys())
-        
-        # Создаём Series
-        feature_series = pd.Series(features, name=market_id)
+            
+            # Создаём Series с отсортированными ключами для согласованности
+            sorted_features = {k: features[k] for k in self.feature_names}
+            feature_series = pd.Series(sorted_features, name=market_id)
         
         # Обработка пропусков
         feature_series = self._handle_missing_values(feature_series)
+        
+        # Нормализация, если scaler уже обучен
+        if self.is_fitted and self.scaler is not None:
+            # Преобразуем Series в DataFrame для нормализации
+            feature_df = pd.DataFrame([feature_series.values], columns=feature_series.index)
+            normalized_df = pd.DataFrame(
+                self.scaler.transform(feature_df),
+                columns=feature_df.columns,
+                index=feature_df.index
+            )
+            feature_series = normalized_df.iloc[0]
         
         return feature_series
     
@@ -488,19 +505,35 @@ class FeatureExtractor:
     
     def _create_empty_features(self) -> pd.Series:
         """Создаёт пустой Series с признаками (для обработки ошибок)."""
-        # Создаём минимальный набор фич
-        empty_features = {
-            'price_current': 0.5,
-            'price_mean': 0.5,
-            'price_std': 0.0,
-            'days_to_expiry': 365,
-            'category_crypto': 0.0,
-            'category_politics': 0.0,
-            'category_sports': 0.0,
-            'category_culture': 1.0,
-        }
-        
-        return pd.Series(empty_features)
+        # Если feature_names уже установлен, создаём Series со всеми признаками
+        if self.feature_names:
+            # Создаём словарь с дефолтными значениями для всех признаков
+            empty_features = {name: 0.0 for name in self.feature_names}
+            # Устанавливаем разумные дефолты для некоторых признаков
+            if 'price_current' in empty_features:
+                empty_features['price_current'] = 0.5
+            if 'price_mean' in empty_features:
+                empty_features['price_mean'] = 0.5
+            if 'days_to_expiry' in empty_features:
+                empty_features['days_to_expiry'] = 365
+            if 'category_culture' in empty_features:
+                empty_features['category_culture'] = 1.0
+            
+            return pd.Series(empty_features)
+        else:
+            # Создаём минимальный набор фич (если feature_names ещё не установлен)
+            empty_features = {
+                'price_current': 0.5,
+                'price_mean': 0.5,
+                'price_std': 0.0,
+                'days_to_expiry': 365,
+                'category_crypto': 0.0,
+                'category_politics': 0.0,
+                'category_sports': 0.0,
+                'category_culture': 1.0,
+            }
+            
+            return pd.Series(empty_features)
     
     def get_feature_names(self) -> List[str]:
         """Возвращает список названий признаков."""

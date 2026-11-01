@@ -253,6 +253,13 @@ def cmd_predict(args):
     from ml_oracle.feature_extractor import MarketMetadata
     extractor = FeatureExtractor()
     
+    # Загружаем scaler, если он сохранён
+    scaler_path = model_path.replace('.pkl', '_scaler.pkl')
+    extractor.load_scaler(scaler_path)
+    
+    # Устанавливаем feature_names из модели для согласованности
+    extractor.feature_names = model.feature_names
+    
     metadata = MarketMetadata(
         id=market_id,
         question=metadata_df.iloc[0]['question'],

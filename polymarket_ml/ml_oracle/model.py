@@ -427,8 +427,7 @@ class MLOracle:
     ) -> CalibratedClassifierCV:
         """Калибрует вероятности модели.
         
-        Использует cv='prefit' чтобы не переобучать модель,
-        а только откалибровать её вероятности на данных.
+        Использует cv=2 для калибровки на части данных.
         """
         # Для XGBoost убираем early_stopping и callbacks перед калибровкой
         if hasattr(model, 'set_params'):
@@ -445,10 +444,17 @@ class MLOracle:
         if hasattr(model, 'eval_set'):
             model.eval_set = None
         
+        # Убираем eval_metric если есть (XGBoost)
+        if hasattr(model, 'set_params'):
+            try:
+                model.set_params(eval_metric=None)
+            except Exception:
+                pass
+        
         calibrated = CalibratedClassifierCV(
             model,
             method=self.config.calibration_method,
-            cv='prefit'  # Используем уже обученную модель
+            cv=2  # Используем 2 фолда для калибровки
         )
         
         with warnings.catch_warnings():
@@ -570,6 +576,7 @@ class MLOracle:
             # Получаем базовую модель (если калибрована)
             base_model = self.model
             if isinstance(self.model, CalibratedClassifierCV):
+                # Берём первый калиброванный классификатор
                 base_model = self.model.calibrated_classifiers_[0].estimator
             
             # Feature importance

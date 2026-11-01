@@ -3,13 +3,14 @@ import { getRealWorldProbability } from './oracle';
 
 export function findArbitrageOpportunities(
   markets: Market[],
-  threshold: number = 0.15
+  threshold: number = 0.15,
+  livePrices?: Record<string, number>
 ): ArbitrageOpportunity[] {
   const opportunities: ArbitrageOpportunity[] = [];
 
   for (const market of markets) {
     try {
-      const oracle = getRealWorldProbability(market);
+      const oracle = getRealWorldProbability(market, livePrices);
       const edge = oracle.oracle_probability - market.implied_probability;
       const absEdge = Math.abs(edge);
 
@@ -49,10 +50,11 @@ export function findArbitrageOpportunities(
 }
 
 export function analyzeAllMarkets(
-  markets: Market[]
+  markets: Market[],
+  livePrices?: Record<string, number>
 ): { market: Market; oracle: OracleResult; edge: number }[] {
   return markets.map(market => {
-    const oracle = getRealWorldProbability(market);
+    const oracle = getRealWorldProbability(market, livePrices);
     const edge = oracle.oracle_probability - market.implied_probability;
     return { market, oracle, edge };
   });

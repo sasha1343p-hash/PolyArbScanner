@@ -4,9 +4,21 @@ interface HeaderProps {
   onRefresh: () => void;
   totalMarkets: number;
   opportunities: number;
+  marketsSource: 'live' | 'mock';
+  pricesSource: 'live' | 'mock';
 }
 
-export function Header({ lastScanTime, isScanning, onRefresh, totalMarkets, opportunities }: HeaderProps) {
+export function Header({
+  lastScanTime,
+  isScanning,
+  onRefresh,
+  totalMarkets,
+  opportunities,
+  marketsSource,
+  pricesSource,
+}: HeaderProps) {
+  const isLive = marketsSource === 'live' || pricesSource === 'live';
+  
   return (
     <header className="sticky top-0 z-50 border-b border-gray-800/50 bg-[#0a0a0f]/90 backdrop-blur-xl">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -24,7 +36,15 @@ export function Header({ lastScanTime, isScanning, onRefresh, totalMarkets, oppo
               )}
             </div>
             <div>
-              <h1 className="text-base font-semibold text-white tracking-tight">PolyArb Scanner</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-semibold text-white tracking-tight">PolyArb Scanner</h1>
+                {isLive && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-900/50 border border-emerald-700/50">
+                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-medium text-emerald-400">LIVE</span>
+                  </span>
+                )}
+              </div>
               <p className="text-[10px] text-gray-500 -mt-0.5">Prediction Markets Arbitrage</p>
             </div>
           </div>

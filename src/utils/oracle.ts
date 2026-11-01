@@ -40,8 +40,8 @@ export function parseMarketQuestion(question: string): {
   };
 
   const assetPatterns: Record<string, RegExp> = {
-    BTC: /bitcoin|btc/i,
-    ETH: /ethereum|eth(?!ereum)/i,
+    BTC: /bitcoin|\bbtc\b/i,
+    ETH: /ethereum|\beth\b(?!ereum)/i,
     SOL: /solana|(?<!\w)sol(?!\w)/i,
   };
 
@@ -89,7 +89,14 @@ export function parseMarketQuestion(question: string): {
   return result;
 }
 
-export function getRealWorldProbability(market: Market): OracleResult {
+/**
+ * Вычисляет вероятность с учётом реальных цен
+ * @param livePrices - реальные цены крипто (если загружены)
+ */
+export function getRealWorldProbability(
+  market: Market,
+  livePrices?: Record<string, number>
+): OracleResult {
   // Проверка на предопределённые вероятности для некрипто-рынков
   if (ORACLE_CONFIG.oracleOverrides[market.id] !== undefined) {
     const oracleProb = ORACLE_CONFIG.oracleOverrides[market.id];
@@ -125,7 +132,8 @@ export function getRealWorldProbability(market: Market): OracleResult {
     };
   }
 
-  const currentPrice = mockCurrentPrices[parsed.asset] || 0;
+  // Используем реальные цены или мок
+  const currentPrice = (livePrices && livePrices[parsed.asset]) || mockCurrentPrices[parsed.asset] || 0;
   const strikePrice = parsed.strikePrice;
   const volatility = ORACLE_CONFIG.volatility[parsed.asset] || 0.7;
 
@@ -154,18 +162,20 @@ export function getRealWorldProbability(market: Market): OracleResult {
     Math.max(ORACLE_CONFIG.minConfidence, Math.abs(zScore) * 0.3 + 0.3)
   );
 
+  const priceSource = (livePrices && livePrices[parsed.asset]) ? '🟢 LIVE' : '⚪ mock';
+  
   let reasoning = '';
   if (parsed.direction === 'above') {
     if (currentPrice > strikePrice) {
-      reasoning = `Текущая цена ${parsed.asset} ($${currentPrice.toLocaleString()}) ВЫШЕ порога $${strikePrice.toLocaleString()} на ${(distancePct * 100).toFixed(1)}%. До экспирации ${daysToExpiry} дней.`;
+      reasoning = `[${priceSource}] ${parsed.asset}: $${currentPrice.toLocaleString()} > $${strikePrice.toLocaleString()} (+${(distancePct * 100).toFixed(1)}%). До экспирации ${daysToExpiry} дн.`;
     } else {
-      reasoning = `Текущая цена ${parsed.asset} ($${currentPrice.toLocaleString()}) НИЖЕ порога $${strikePrice.toLocaleString()} на ${Math.abs(distancePct * 100).toFixed(1)}%. До экспирации ${daysToExpiry} дней.`;
+      reasoning = `[${priceSource}] ${parsed.asset}: $${currentPrice.toLocaleString()} < $${strikePrice.toLocaleString()} (${(distancePct * 100).toFixed(1)}%). До экспирации ${daysToExpiry} дн.`;
     }
   } else {
     if (currentPrice < strikePrice) {
-      reasoning = `Текущая цена ${parsed.asset} ($${currentPrice.toLocaleString()}) УЖЕ ниже порога $${strikePrice.toLocaleString()}. До экспирации ${daysToExpiry} дней.`;
+      reasoning = `[${priceSource}] ${parsed.asset}: $${currentPrice.toLocaleString()} < $${strikePrice.toLocaleString()}. До экспирации ${daysToExpiry} дн.`;
     } else {
-      reasoning = `Текущая цена ${parsed.asset} ($${currentPrice.toLocaleString()}) выше порога $${strikePrice.toLocaleString()} на ${(distancePct * 100).toFixed(1)}%. До экспирации ${daysToExpiry} дней.`;
+      reasoning = `[${priceSource}] ${parsed.asset}: $${currentPrice.toLocaleString()} > $${strikePrice.toLocaleString()} (+${(distancePct * 100).toFixed(1)}%). До экспирации ${daysToExpiry} дн.`;
     }
   }
 

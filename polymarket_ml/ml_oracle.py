@@ -26,6 +26,10 @@ from ml_oracle.model import TrainingConfig
 from ml_oracle.monitor import MonitorConfig
 from ml_oracle.ensemble import EnsembleConfig
 
+# Создаём необходимые директории ДО настройки логирования
+os.makedirs('logs', exist_ok=True)
+os.makedirs('artifacts', exist_ok=True)
+
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO,

@@ -26,7 +26,7 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class ModelEvaluator:
-    def __init__(self, db_path='../polymarket_history.db', model_path='artifacts/ml_oracle_bundle.pkl'):
+    def __init__(self, db_path='polymarket_history.db', model_path='artifacts/ml_oracle_bundle.pkl'):
         self.db_path = db_path
         self.model_path = model_path
         self.model_bundle = None

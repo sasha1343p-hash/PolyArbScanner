@@ -1,0 +1,82 @@
+import { Market, ArbitrageOpportunity, OracleResult } from '../types';
+import { getRealWorldProbability } from './oracle';
+
+/**
+ * Модуль "Детектор аномалий"
+ * Находит арбитражные возможности, сравнивая
+ * вероятности рынка с оценками оракула.
+ */
+
+/**
+ * Находит арбитражные возможности среди списка рынков
+ * @param markets - список рынков для анализа
+ * @param threshold - минимальный edge для включения в результат
+ */
+export function findArbitrageOpportunities(
+  markets: Market[],
+  threshold: number = 0.15
+): ArbitrageOpportunity[] {
+  const opportunities: ArbitrageOpportunity[] = [];
+
+  for (const market of markets) {
+    try {
+      const oracle = getRealWorldProbability(market);
+      const edge = oracle.oracle_probability - market.implied_probability;
+      const absEdge = Math.abs(edge);
+
+      if (absEdge >= threshold) {
+        // Определяем рекомендацию
+        let recommendation: 'BUY YES' | 'BUY NO' | 'HOLD';
+        if (edge > 0) {
+          // Оракул считает, что вероятность ВЫШЕ, чем рынок
+          // → рынок недооценивает → BUY YES
+          recommendation = 'BUY YES';
+        } else {
+          // Оракул считает, что вероятность НИЖЕ, чем рынок
+          // → рынок переоценивает → BUY NO
+          recommendation = 'BUY NO';
+        }
+
+        // Определяем серьёзность
+        let severity: 'high' | 'medium' | 'low';
+        if (absEdge >= 0.25) {
+          severity = 'high';
+        } else if (absEdge >= 0.18) {
+          severity = 'medium';
+        } else {
+          severity = 'low';
+        }
+
+        opportunities.push({
+          market,
+          oracle,
+          edge: Math.round(edge * 1000) / 1000,
+          absEdge,
+          recommendation,
+          severity,
+        });
+      }
+    } catch (error) {
+      console.error(`Ошибка анализа рынка ${market.id}:`, error);
+    }
+  }
+
+  // Сортируем по убыванию абсолютного edge
+  opportunities.sort((a, b) => b.absEdge - a.absEdge);
+
+  return opportunities;
+}
+
+/**
+ * Анализирует все рынки (включая те, что не прошли порог)
+ * для отображения полной картины
+ */
+export function analyzeAllMarkets(
+  markets: Market[]
+): { market: Market; oracle: OracleResult; edge: number }[] {
+  return markets.map(market => {
+    const oracle = getRealWorldProbability(market);
+    const edge = oracle.oracle_probability - market.implied_probability;
+    return { market, oracle, edge };
+  });
+}

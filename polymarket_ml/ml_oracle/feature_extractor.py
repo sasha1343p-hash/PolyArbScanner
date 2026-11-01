@@ -213,6 +213,10 @@ class FeatureExtractor:
         """Извлекает статистики цен."""
         prices = df['yes_price'].values
         
+        # Клиппинг цен в диапазон [0, 1] для вероятностей
+        if len(prices) > 0:
+            prices = np.clip(prices, 0.0, 1.0)
+        
         features = {
             'price_current': prices[-1] if len(prices) > 0 else 0.5,
             'price_mean': np.mean(prices) if len(prices) > 0 else 0.5,

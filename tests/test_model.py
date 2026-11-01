@@ -154,7 +154,8 @@ def test_model_feature_importance(trained_model):
     # Каждый элемент - кортеж (feature_name, importance)
     for feature, score in importance:
         assert isinstance(feature, str)
-        assert isinstance(score, (int, float))
+        # numpy 2 возвращает np.float32, который не является float в isinstance
+        assert hasattr(score, '__float__') or isinstance(score, (int, float))
         assert score >= 0
 
 

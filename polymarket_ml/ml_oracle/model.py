@@ -377,6 +377,11 @@ class MLOracle:
             X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
             y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
             
+            # Пропускаем фолд, если в нём нет одного из классов
+            if len(set(y_train)) < 2 or len(set(y_val)) < 2:
+                logger.warning("Пропускаем фолд: один из классов отсутствует")
+                continue
+            
             # Обработка дисбаланса классов
             scale_pos_weight = (y_train == 0).sum() / max((y_train == 1).sum(), 1)
             params = self.config.lgb_params.copy()

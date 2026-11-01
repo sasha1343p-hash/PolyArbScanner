@@ -144,7 +144,6 @@ class TrainingConfig:
                 'reg_lambda': 1.0,
                 'min_child_weight': 3,
                 'random_state': self.random_state,
-                'early_stopping_rounds': 50,
                 'eval_metric': 'auc',
                 'tree_method': 'hist',
             }
@@ -160,8 +159,7 @@ class TrainingConfig:
                 'reg_lambda': 1.0,
                 'min_child_weight': 3,
                 'random_state': self.random_state,
-                'early_stopping_rounds': 50,
-                'eval_metric': 'auc',
+                'early_stopping_round': 50,
                 'verbose': -1,
             }
 
@@ -337,6 +335,17 @@ class MLOracle:
                 best_model = model
         
         avg_score = np.mean(scores) if scores else 0.0
+        
+        # Переобучаем лучшую модель на всех данных (без early stopping)
+        if best_model is not None:
+            final_params = self.config.xgb_params.copy()
+            final_params['scale_pos_weight'] = (y == 0).sum() / max((y == 1).sum(), 1)
+            final_model = xgb.XGBClassifier(**final_params)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                final_model.fit(X, y, verbose=False)
+            return final_model, avg_score
+        
         return best_model, avg_score
     
     def _train_lightgbm(
@@ -368,6 +377,7 @@ class MLOracle:
                 model.fit(
                     X_train, y_train,
                     eval_set=[(X_val, y_val)],
+                    eval_metric='auc',
                 )
             
             y_pred_proba = model.predict_proba(X_val)[:, 1]
@@ -378,6 +388,20 @@ class MLOracle:
                 best_model = model
         
         avg_score = np.mean(scores) if scores else 0.0
+        
+        # Переобучаем лучшую модель на всех данных (без early stopping)
+        if best_model is not None:
+            final_params = self.config.lgb_params.copy()
+            final_params['scale_pos_weight'] = (y == 0).sum() / max((y == 1).sum(), 1)
+            # Убираем early stopping для финального обучения
+            final_params.pop('early_stopping_round', None)
+            final_params.pop('early_stopping_rounds', None)
+            final_model = lgb.LGBMClassifier(**final_params)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                final_model.fit(X, y)
+            return final_model, avg_score
+        
         return best_model, avg_score
     
     def _calibrate_model(
@@ -386,11 +410,26 @@ class MLOracle:
         X: pd.DataFrame,
         y: pd.Series
     ) -> CalibratedClassifierCV:
-        """Калибрует вероятности модели."""
+        """Калибрует вероятности модели.
+        
+        Использует cv='prefit' чтобы не переобучать модель,
+        а только откалибровать её вероятности на данных.
+        """
+        # Для XGBoost убираем early_stopping_rounds перед калибровкой
+        if hasattr(model, 'set_params'):
+            try:
+                model.set_params(early_stopping_rounds=None)
+            except Exception:
+                pass
+        
+        # Убираем eval_set если есть
+        if hasattr(model, 'eval_set'):
+            model.eval_set = None
+        
         calibrated = CalibratedClassifierCV(
             model,
             method=self.config.calibration_method,
-            cv=self.config.calibration_cv
+            cv='prefit'  # Используем уже обученную модель
         )
         
         with warnings.catch_warnings():

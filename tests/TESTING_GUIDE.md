@@ -249,6 +249,13 @@ class TestMyFeature:
 4. **Проверяйте coverage** - стремитесь к > 80%
 5. **Читайте ошибки** - они говорят, что не так
 
+## 📖 Документация проекта
+
+- **[../polymarket_ml/TEST_REPORT.md](../polymarket_ml/TEST_REPORT.md)** - полный отчёт о тестировании
+- **[../polymarket_ml/AI_TESTING_GUIDE.md](../polymarket_ml/AI_TESTING_GUIDE.md)** - главный файл для другой ИИ
+- **[../polymarket_ml/TESTING.md](../polymarket_ml/TESTING.md)** - документ по тестированию
+- **[../polymarket_ml/README.md](../polymarket_ml/README.md)** - основная документация проекта
+
 ## 📚 Дополнительные ресурсы
 
 - [Pytest documentation](https://docs.pytest.org/)

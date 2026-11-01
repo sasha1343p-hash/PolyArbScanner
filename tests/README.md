@@ -63,8 +63,9 @@ python quick_check.py
 ## 📖 Документация
 
 - **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - подробное руководство по тестированию
-- **[polymarket_ml/AI_TESTING_GUIDE.md](../polymarket_ml/AI_TESTING_GUIDE.md)** - главный файл для другой ИИ
-- **[polymarket_ml/README.md](../polymarket_ml/README.md)** - основная документация проекта
+- **[../polymarket_ml/AI_TESTING_GUIDE.md](../polymarket_ml/AI_TESTING_GUIDE.md)** - главный файл для другой ИИ
+- **[../polymarket_ml/TEST_REPORT.md](../polymarket_ml/TEST_REPORT.md)** - полный отчёт о тестировании
+- **[../polymarket_ml/README.md](../polymarket_ml/README.md)** - основная документация проекта
 
 ## 🏃 Команды для тестирования
 

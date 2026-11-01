@@ -13,7 +13,7 @@ python quick_check.py
 ```bash
 run_tests.bat  # Windows
 # или
-pytest tests/ -v  # Linux/Mac
+pytest ../tests/ -v  # Linux/Mac (из папки polymarket_ml/)
 ```
 
 ### 3. Генерация отчёта
@@ -51,27 +51,29 @@ python generate_test_report.py
 |------|----------|
 | **[AI_TESTING_GUIDE.md](AI_TESTING_GUIDE.md)** | **🎯 ГЛАВНЫЙ ФАЙЛ для другой ИИ** |
 | [TESTING.md](TESTING.md) | Главный документ по тестированию |
-| [tests/TESTING_GUIDE.md](tests/TESTING_GUIDE.md) | Подробное руководство по тестированию |
-| [tests/README.md](tests/README.md) | Документация тестов |
+| [../tests/TESTING_GUIDE.md](../tests/TESTING_GUIDE.md) | Подробное руководство по тестированию |
+| [../tests/README.md](../tests/README.md) | Документация тестов |
 | [README.md](README.md) | Основная документация проекта |
 
 ## 🏃 Команды для тестирования
+
+**⚠️ ВАЖНО:** Все команды должны выполняться из папки `polymarket_ml/`, но тесты находятся в `../tests/`.
 
 ```bash
 # Быстрая проверка
 python quick_check.py
 
-# Все тесты
-pytest tests/ -v
+# Все тесты (из папки polymarket_ml/)
+pytest ../tests/ -v
 
 # С coverage
-pytest tests/ --cov=ml_oracle --cov-report=html
+pytest ../tests/ --cov=ml_oracle --cov-report=html
 
 # Генерация отчёта
 python generate_test_report.py
 
 # Отладка
-pytest tests/ -vv -s -l
+pytest ../tests/ -vv -s -l
 ```
 
 ## 📊 Пример успешного результата
@@ -115,19 +117,24 @@ $ python quick_check.py
 
 ## 🔍 Структура тестов
 
+**⚠️ ВАЖНО:** Тесты находятся в отдельной папке `tests/` на верхнем уровне проекта.
+
 ```
-polymarket_ml/
-├── tests/
+project_root/
+├── tests/                           ← ОТДЕЛЬНАЯ ПАПКА ДЛЯ ТЕСТОВ
 │   ├── test_feature_extractor.py    # 15 unit-тестов
 │   ├── test_model.py                # 12 unit-тестов
 │   ├── test_integration.py          # 10 интеграционных тестов
 │   ├── TESTING_GUIDE.md             # Подробное руководство
+│   ├── conftest.py                  # Конфигурация pytest
 │   └── README.md                    # Документация тестов
-├── run_tests.bat                    # Скрипт запуска тестов
-├── generate_test_report.py          # Генератор отчёта
-├── quick_check.py                   # Быстрая проверка
-├── TESTING.md                       # Главный документ
-└── AI_TESTING_GUIDE.md              # 🎯 Для другой ИИ
+├── polymarket_ml/                   ← Python проект
+│   ├── run_tests.bat                # Скрипт запуска тестов
+│   ├── generate_test_report.py      # Генератор отчёта
+│   ├── quick_check.py               # Быстрая проверка
+│   ├── TESTING.md                   # Главный документ
+│   └── AI_TESTING_GUIDE.md          # 🎯 Для другой ИИ
+└── ...
 ```
 
 ## 💡 Для другой ИИ
@@ -144,8 +151,8 @@ polymarket_ml/
 ### Тесты упали?
 1. Прочитайте вывод ошибки
 2. Проверьте `logs/ml_oracle.log`
-3. Запустите `pytest tests/ -vv -s` для подробностей
-4. Обратитесь к `tests/TESTING_GUIDE.md`
+3. Запустите `pytest ../tests/ -vv -s` для подробностей
+4. Обратитесь к `../tests/TESTING_GUIDE.md`
 
 ### Coverage ниже 80%?
 - Проверьте, что все модули импортируются

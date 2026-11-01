@@ -4,17 +4,22 @@
 
 ## 📁 Структура
 
+**⚠️ ВАЖНО:** Тесты находятся в отдельной папке `tests/` на верхнем уровне проекта.
+
 ```
-polymarket_ml/
-├── tests/
+project_root/
+├── tests/                           ← ОТДЕЛЬНАЯ ПАПКА ДЛЯ ТЕСТОВ
 │   ├── test_feature_extractor.py    # Unit-тесты признаков (15 тестов)
 │   ├── test_model.py                # Unit-тесты модели (12 тестов)
 │   ├── test_integration.py          # Интеграционные тесты (10 тестов)
 │   ├── TESTING_GUIDE.md             # Подробное руководство
+│   ├── conftest.py                  # Конфигурация pytest
 │   └── README.md                    # Документация тестов
-├── run_tests.bat                    # Скрипт запуска тестов (Windows)
-├── generate_test_report.py          # Генератор отчёта
-└── README.md                        # Этот файл
+├── polymarket_ml/                   ← Python проект
+│   ├── run_tests.bat                # Скрипт запуска тестов (Windows)
+│   ├── generate_test_report.py      # Генератор отчёта
+│   └── README.md                    # Этот файл
+└── ...
 ```
 
 ## 🚀 Быстрый старт для другой ИИ
@@ -28,7 +33,7 @@ run_tests.bat
 
 **Linux/Mac:**
 ```bash
-pytest tests/ -v
+pytest ../tests/ -v
 ```
 
 ### 2. Сгенерировать отчёт
@@ -107,8 +112,8 @@ python generate_test_report.py
 
 ## 📖 Документация
 
-- **[TESTING_GUIDE.md](tests/TESTING_GUIDE.md)** - подробное руководство по тестированию
-- **[tests/README.md](tests/README.md)** - документация тестов
+- **[../tests/TESTING_GUIDE.md](../tests/TESTING_GUIDE.md)** - подробное руководство по тестированию
+- **[../tests/README.md](../tests/README.md)** - документация тестов
 - **[README.md](README.md)** - основная документация проекта
 
 ## 🔍 Для другой ИИ
@@ -123,7 +128,7 @@ pip list | grep -E "pandas|xgboost|lightgbm"
 
 ### Шаг 2: Запуск тестов
 ```bash
-pytest tests/ -v --tb=short
+pytest ../tests/ -v --tb=short
 ```
 
 ### Шаг 3: Анализ результатов

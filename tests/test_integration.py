@@ -281,10 +281,12 @@ class TestDataQuality:
         """Тест диапазонов значений признаков."""
         metadata_df, price_df = sample_data
         
-        extractor = FeatureExtractor()
+        # Отключаем нормализацию, чтобы проверить сырые значения признаков
+        config = FeatureConfig(normalize=False)
+        extractor = FeatureExtractor(config)
         X = extractor.extract_features_batch(metadata_df, price_df)
         
-        # Проверяем вероятности
+        # Проверяем вероятности (сырые, до нормализации)
         if 'price_current' in X.columns:
             assert (X['price_current'] >= 0).all() and (X['price_current'] <= 1).all(), \
                 "price_current должен быть в [0, 1]"

@@ -2,6 +2,8 @@
 
 Этот документ содержит инструкции для другой ИИ по тестированию приложения PolyArb ML Oracle.
 
+**⚠️ ВАЖНО:** Все тесты находятся в отдельной папке `tests/` на верхнем уровне проекта (рядом с `polymarket_ml/`, `src/`, `public/`).
+
 ## 🎯 Быстрая проверка (30 секунд)
 
 ```bash
@@ -38,7 +40,7 @@ python quick_check.py
 ```bash
 run_tests.bat  # Windows
 # или
-pytest tests/ -v  # Linux/Mac
+pytest ../tests/ -v  # Linux/Mac (из папки polymarket_ml/)
 ```
 
 ### Вариант 2: С генерацией отчёта
@@ -92,46 +94,57 @@ python generate_test_report.py
 
 ## 🔍 Структура тестов
 
+**⚠️ ВАЖНО:** Тесты находятся в отдельной папке `tests/` на верхнем уровне проекта (рядом с `polymarket_ml/`, `src/`, `public/`).
+
 ```
-tests/
-├── test_feature_extractor.py    # 15 unit-тестов
-├── test_model.py                # 12 unit-тестов
-├── test_integration.py          # 10 интеграционных тестов
-├── TESTING_GUIDE.md             # Подробное руководство
-└── README.md                    # Документация тестов
+project_root/
+├── tests/                       ← ОТДЕЛЬНАЯ ПАПКА ДЛЯ ТЕСТОВ
+│   ├── test_feature_extractor.py    # 15 unit-тестов
+│   ├── test_model.py                # 12 unit-тестов
+│   ├── test_integration.py          # 10 интеграционных тестов
+│   ├── TESTING_GUIDE.md             # Подробное руководство
+│   ├── conftest.py                  # Конфигурация pytest
+│   └── README.md                    # Документация тестов
+├── polymarket_ml/               ← Python проект
+│   ├── ml_oracle/
+│   ├── ml_oracle.py
+│   └── ...
+└── ...
 ```
 
 ## 📚 Документация
 
 - **[TESTING.md](TESTING.md)** - главный документ по тестированию
-- **[tests/TESTING_GUIDE.md](tests/TESTING_GUIDE.md)** - подробное руководство
-- **[tests/README.md](tests/README.md)** - документация тестов
+- **[../tests/TESTING_GUIDE.md](../tests/TESTING_GUIDE.md)** - подробное руководство
+- **[../tests/README.md](../tests/README.md)** - документация тестов
 - **[README.md](README.md)** - основная документация проекта
 
 ## 🏃 Команды для тестирования
+
+**⚠️ ВАЖНО:** Все команды должны выполняться из папки `polymarket_ml/`, но тесты находятся в `../tests/`.
 
 ```bash
 # Быстрая проверка
 python quick_check.py
 
-# Все тесты
-pytest tests/ -v
+# Все тесты (из папки polymarket_ml/)
+pytest ../tests/ -v
 
 # С coverage
-pytest tests/ --cov=ml_oracle --cov-report=html
+pytest ../tests/ --cov=ml_oracle --cov-report=html
 
 # Генерация отчёта
 python generate_test_report.py
 
 # Отладка
-pytest tests/ -vv -s -l
+pytest ../tests/ -vv -s -l
 ```
 
 ## 🐛 Если тесты упали
 
 ### Шаг 1: Проверьте вывод
 ```bash
-pytest tests/ -v --tb=short
+pytest ../tests/ -v --tb=short
 ```
 
 ### Шаг 2: Проверьте логи
@@ -141,12 +154,12 @@ cat logs/ml_oracle.log
 
 ### Шаг 3: Запустите с подробным выводом
 ```bash
-pytest tests/ -vv -s
+pytest ../tests/ -vv -s
 ```
 
 ### Шаг 4: Проверьте конкретный тест
 ```bash
-pytest tests/test_integration.py::TestFullPipeline::test_feature_extraction_to_prediction -v
+pytest ../tests/test_integration.py::TestFullPipeline::test_feature_extraction_to_prediction -v
 ```
 
 ## 📈 Критерии приёмки
@@ -248,8 +261,8 @@ python generate_test_report.py
 3. **Если что-то упало:**
    - Прочитайте вывод ошибки
    - Проверьте `logs/ml_oracle.log`
-   - Запустите `pytest tests/ -vv -s` для подробностей
-   - Обратитесь к `tests/TESTING_GUIDE.md`
+   - Запустите `pytest ../tests/ -vv -s` для подробностей
+   - Обратитесь к `../tests/TESTING_GUIDE.md`
 
 4. **Для отладки:**
    - Проверьте виртуальное окружение
@@ -261,7 +274,7 @@ python generate_test_report.py
 
 Если тесты не проходят:
 1. Проверьте [TESTING.md](TESTING.md)
-2. Проверьте [tests/TESTING_GUIDE.md](tests/TESTING_GUIDE.md)
+2. Проверьте [../tests/TESTING_GUIDE.md](../tests/TESTING_GUIDE.md)
 3. Проверьте логи в `logs/ml_oracle.log`
 4. Запустите с флагом `-vv -s` для подробного вывода
 

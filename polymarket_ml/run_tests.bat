@@ -20,7 +20,7 @@ REM Activate environment
 call venv\Scripts\activate.bat
 
 echo [1/3] Running unit tests...
-pytest tests/test_feature_extractor.py tests/test_model.py -v --tb=short
+pytest ../tests/test_feature_extractor.py ../tests/test_model.py -v --tb=short
 if errorlevel 1 (
     echo.
     echo WARNING: Some unit tests failed
@@ -31,7 +31,7 @@ if errorlevel 1 (
 
 echo.
 echo [2/3] Running integration tests...
-pytest tests/test_integration.py -v --tb=short
+pytest ../tests/test_integration.py -v --tb=short
 if errorlevel 1 (
     echo.
     echo WARNING: Some integration tests failed
@@ -42,7 +42,7 @@ if errorlevel 1 (
 
 echo.
 echo [3/3] Generating coverage report...
-pytest tests/ --cov=ml_oracle --cov-report=html --cov-report=term-missing
+pytest ../tests/ --cov=ml_oracle --cov-report=html --cov-report=term-missing
 if errorlevel 1 (
     echo WARNING: Coverage report generation failed
 ) else (

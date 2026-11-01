@@ -123,8 +123,8 @@ def run_tests() -> dict:
     print("Running unit tests...")
     success, output = run_command([
         sys.executable, '-m', 'pytest',
-        'tests/test_feature_extractor.py',
-        'tests/test_model.py',
+        '../tests/test_feature_extractor.py',
+        '../tests/test_model.py',
         '-v', '--tb=short'
     ])
     results['unit_tests']['status'] = success
@@ -146,7 +146,7 @@ def run_tests() -> dict:
     print("Running integration tests...")
     success, output = run_command([
         sys.executable, '-m', 'pytest',
-        'tests/test_integration.py',
+        '../tests/test_integration.py',
         '-v', '--tb=short'
     ])
     results['integration_tests']['status'] = success
@@ -168,7 +168,7 @@ def run_tests() -> dict:
     print("Generating coverage report...")
     success, output = run_command([
         sys.executable, '-m', 'pytest',
-        'tests/',
+        '../tests/',
         '--cov=ml_oracle',
         '--cov-report=term-missing'
     ])

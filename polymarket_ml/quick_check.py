@@ -134,7 +134,7 @@ def check_tests() -> bool:
     """Запускает тесты."""
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short", "-q"],
+            [sys.executable, "-m", "pytest", "../tests/", "-v", "--tb=short", "-q"],
             capture_output=True,
             text=True,
             timeout=120

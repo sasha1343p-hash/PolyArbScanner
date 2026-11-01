@@ -1,28 +1,24 @@
 # Отчёт о тестировании ML Oracle
 
-**Дата прогона:** 1 ноября 2026, 19:44 (+08)  
+**Дата прогона:** 1 ноября 2026, 20:07 (+08)  
 **Команда:** `polymarket_ml\venv\Scripts\python.exe -m pytest ..\tests -v --tb=short`  
 **Среда:** Python 3.13.15, pytest 9.2.0, venv `polymarket_ml/venv`
 
-**Итог: 40 пройдено, 1 провален, 0 ошибок.** Время 89.8 с.
+**Итог: 41 пройден, 0 провалов, 0 ошибок.** Время 89.4 с.
 
-Мониторинг дрейфа и несбалансированные классы, которые падали в прогоне 19:19, теперь проходят. Остался один дефект диапазона цены.
+`test_feature_ranges`, который падал в прогоне 19:44, теперь зелёный.
 
-Предупреждения (не падения): 2 × `UndefinedMetricWarning` в `test_model_imbalanced_classes` — на фолде `TimeSeriesSplit` в `y_true` один класс, ROC AUC не определён.
+## Ошибки
 
-## Единственное падение
+Падений нет.
 
-`tests/test_integration.py::TestDataQuality::test_feature_ranges`
+## Предупреждения
 
-Проверка ждёт, что колонка `price_current` лежит в [0, 1]. Фактический столбец это не выполняет: `market-003 = -1.032`, `market-004 = 1.832`, `market-000 = 1.701`. `(X['price_current'] >= 0).all()` ложно, поэтому проверки `volatility_24h >= 0` и RSI в [0, 100] не выполняются.
+2 × `UndefinedMetricWarning` в `test_model_imbalanced_classes`:
 
-Это уже не сырая цена. В `_extract_price_statistics` ряд обрезается:
-
-```python
-prices = np.clip(prices, 0.0, 1.0)
-'price_current': prices[-1]
+```text
+sklearn/metrics/_ranking.py: Only one class is present in y_true.
+ROC AUC score is not defined in that case.
 ```
 
-Дальше `extract_features_batch` при `FeatureConfig.normalize = True` (значение по умолчанию, `scaler_type = "standard"`) прогоняет всю матрицу через `StandardScaler`. Тест создаёт экстрактор без конфига, то есть со включённой нормализацией. После неё `price_current` — z-score со средним около 0, а не вероятность. Числа порядка −1…1.8 как раз такой масштаб.
-
-Сырой YES-цене в фикстуре тоже тесно в [0, 1]: `base_price + N(0, 0.05)` за 200 часов выходит за границы. До возврата из батча клиппинг это срезает, а стандартная нормализация раздвигает признак снова. Проверка диапазона вероятности и включённый по умолчанию scaler смотрят на разные величины.
+Тест при этом проходит. На фолде `TimeSeriesSplit` в `y_true` остаётся один класс, и ROC AUC для этого фолда не считается. На результат набора это не влияет.

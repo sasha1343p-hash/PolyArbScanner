@@ -7,11 +7,21 @@ from sklearn.metrics import (
     roc_auc_score, brier_score_loss, classification_report,
     roc_curve, precision_recall_curve
 )
-import matplotlib.pyplot as plt
-import seaborn as sns
 from datetime import datetime
 import logging
 import os
+
+# Опциональные библиотеки для визуализации
+try:
+    import matplotlib
+    matplotlib.use('Agg')  # Не требует GUI
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    HAS_MATPLOTLIB = True
+except ImportError:
+    HAS_MATPLOTLIB = False
+    print("⚠️  matplotlib/seaborn не установлены. Графики не будут построены.")
+    print("   Для графиков выполните: pip install matplotlib seaborn")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -108,6 +118,10 @@ class ModelEvaluator:
     
     def plot_results(self, y, y_pred_proba):
         """Строит графики для визуализации качества"""
+        if not HAS_MATPLOTLIB:
+            logging.warning("⚠️  matplotlib не установлен, пропускаем построение графиков")
+            return
+        
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         
         # 1. ROC Curve
@@ -206,8 +220,11 @@ class ModelEvaluator:
         logging.info("\nClassification Report:")
         logging.info(classification_report(y, y_pred, target_names=['NO', 'YES']))
         
-        # Строим графики
-        self.plot_results(y, y_pred_proba)
+        # Строим графики (если matplotlib доступен)
+        if HAS_MATPLOTLIB:
+            self.plot_results(y, y_pred_proba)
+        else:
+            logging.info("ℹ️  Пропускаем построение графиков (matplotlib не установлен)")
         
         # Рекомендации
         logging.info("\n" + "=" * 60)

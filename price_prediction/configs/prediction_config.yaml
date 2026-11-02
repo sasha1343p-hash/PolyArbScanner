@@ -1,0 +1,44 @@
+# Price Prediction System - Конфигурация
+
+# Параметры генерации targets
+target_generation:
+  price_increase_threshold: 0.05  # 5% рост
+  horizon_hours: 24               # горизонт предсказания
+  min_data_points: 48             # минимум часов данных для рынка
+
+# Параметры модели
+model:
+  type: "xgboost"                 # xgboost, lightgbm, random_forest
+  n_estimators: 200
+  max_depth: 6
+  learning_rate: 0.05
+  subsample: 0.8
+  colsample_bytree: 0.8
+  scale_pos_weight: auto          # auto или число
+  random_state: 42
+
+# Параметры бэктестинга
+backtesting:
+  initial_capital: 10000          # начальный капитал
+  position_size: 0.1              # размер позиции (10% от капитала)
+  commission: 0.001               # комиссия (0.1%)
+  slippage: 0.0005                # проскальзывание (0.05%)
+
+# Параметры предсказания
+prediction:
+  confidence_threshold: 0.65      # минимальная уверенность для сигнала
+  min_volume: 1000                # минимальный объем
+  min_liquidity: 5000             # минимальная ликвидность
+
+# Пути к данным
+paths:
+  price_history_db: "../polymarket_history.db"
+  features_db: "data/features.db"
+  targets_csv: "data/targets.csv"
+  model_path: "models/price_predictor.pkl"
+  results_path: "results/"
+
+# Логирование
+logging:
+  level: "INFO"
+  file: "logs/prediction.log"

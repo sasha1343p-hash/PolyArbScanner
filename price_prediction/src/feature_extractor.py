@@ -7,33 +7,40 @@ import os
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class TimeSeriesFeatureExtractor:
-    def __init__(self, lookback_windows=[1, 6, 12, 24, 48, 168]):
+    def __init__(self, max_lookback=48):  # Уменьшили с 168 до 48 часов
         """
-        lookback_windows: список окон в часах для расчета фич
-        [1, 6, 12, 24, 48, 168] = 1h, 6h, 12h, 1d, 2d, 1w
+        max_lookback: максимальное окно в часах для расчета фич
+        48 часов = 2 дня (умещается в 100 точек)
         """
-        self.lookback_windows = lookback_windows
+        self.max_lookback = max_lookback
+        # Окна для расчета фич (все <= max_lookback)
+        self.lookback_windows = [1, 6, 12, 24, 48]
     
     def extract_features(self, price_df):
         """
         Извлекает фичи для каждой точки времени.
-        
-        Вход: DataFrame с колонками [market_id, timestamp, yes_price, volume, liquidity]
-        Выход: DataFrame с фичами для каждой точки
+        Использует адаптивный lookback: для каждого рынка берем доступную историю.
         """
         price_df = price_df.copy()
         price_df['timestamp'] = pd.to_datetime(price_df['timestamp'])
         
         features_list = []
+        markets_processed = 0
         
         for market_id, market_data in price_df.groupby('market_id'):
             market_data = market_data.sort_values('timestamp').reset_index(drop=True)
             
-            if len(market_data) < max(self.lookback_windows):
+            # Минимум 24 точки для расчета базовых фич
+            if len(market_data) < 24:
                 continue
             
+            markets_processed += 1
+            
             # Для каждой точки извлекаем фичи
-            for i in range(max(self.lookback_windows), len(market_data)):
+            # Начинаем с max_lookback, чтобы было достаточно истории
+            start_idx = min(self.max_lookback, len(market_data) - 24)
+            
+            for i in range(start_idx, len(market_data)):
                 current_row = market_data.iloc[i]
                 history = market_data.iloc[:i+1]
                 
@@ -43,11 +50,19 @@ class TimeSeriesFeatureExtractor:
                     history
                 )
                 
-                features_list.append(features)
+                if features:
+                    features_list.append(features)
         
         features_df = pd.DataFrame(features_list)
         
-        logging.info(f"Извлечено {len(features_df)} примеров с {len(features_df.columns) - 2} фичами")
+        logging.info(f"\n{'='*60}")
+        logging.info("ИЗВЛЕЧЕНИЕ ФИЧ")
+        logging.info("="*60)
+        logging.info(f"Рынков обработано: {markets_processed}")
+        logging.info(f"Примеров извлечено: {len(features_df)}")
+        if not features_df.empty:
+            logging.info(f"Фич на пример: {len(features_df.columns) - 2}")
+        logging.info("="*60)
         
         return features_df
     
@@ -55,6 +70,9 @@ class TimeSeriesFeatureExtractor:
         """Извлекает фичи для одной точки времени"""
         prices = history['yes_price'].values
         volumes = history['volume'].values
+        
+        if len(prices) < 24:
+            return None
         
         features = {
             'market_id': market_id,
@@ -74,6 +92,7 @@ class TimeSeriesFeatureExtractor:
         for window in self.lookback_windows:
             if len(prices) >= window:
                 returns = np.diff(prices[-window:]) / prices[-window:-1]
+                returns = returns[~np.isnan(returns)]  # Убираем NaN
                 volatility = np.std(returns) if len(returns) > 0 else 0
                 features[f'volatility_{window}h'] = volatility
         
@@ -82,10 +101,13 @@ class TimeSeriesFeatureExtractor:
             if len(prices) >= window:
                 x = np.arange(window)
                 y = prices[-window:]
-                trend = np.polyfit(x, y, 1)[0] if len(y) > 1 else 0
+                try:
+                    trend = np.polyfit(x, y, 1)[0] if len(y) > 1 else 0
+                except:
+                    trend = 0
                 features[f'trend_{window}h'] = trend
         
-        # 5. Скользящие средние
+        # 5. Скользящие средние (SMA)
         for window in [6, 12, 24, 48]:
             if len(prices) >= window:
                 sma = np.mean(prices[-window:])
@@ -112,7 +134,7 @@ class TimeSeriesFeatureExtractor:
                 features[f'volume_ratio_{window}h'] = volumes[-1] / avg_volume if avg_volume > 0 else 1
         
         # 8. Расстояние от экстремумов
-        for window in [24, 168]:  # 1 день, 1 неделя
+        for window in [24, 48]:  # 1 день, 2 дня
             if len(prices) >= window:
                 max_price = np.max(prices[-window:])
                 min_price = np.min(prices[-window:])
@@ -128,6 +150,21 @@ class TimeSeriesFeatureExtractor:
         # 9. Временные фичи
         features['hour_of_day'] = timestamp.hour
         features['day_of_week'] = timestamp.dayofweek
+        
+        # 10. Дополнительные фичи
+        # Стандартное отклонение цены
+        if len(prices) >= 24:
+            features['price_std_24h'] = np.std(prices[-24:])
+        
+        # Максимальное изменение цены за 24 часа
+        if len(prices) >= 24:
+            price_changes = np.abs(np.diff(prices[-24:]) / prices[-24:-1])
+            price_changes = price_changes[~np.isnan(price_changes)]
+            features['max_price_change_24h'] = np.max(price_changes) if len(price_changes) > 0 else 0
+        
+        # Средний объем за 24 часа
+        if len(volumes) >= 24:
+            features['avg_volume_24h'] = np.mean(volumes[-24:])
         
         return features
     
@@ -160,7 +197,7 @@ if __name__ == "__main__":
     logging.info(f"Загружено {len(price_df)} записей")
     
     # Извлекаем фичи
-    extractor = TimeSeriesFeatureExtractor(lookback_windows=[1, 6, 12, 24, 48, 168])
+    extractor = TimeSeriesFeatureExtractor(max_lookback=48)
     features_df = extractor.extract_features(price_df)
     
     if not features_df.empty:

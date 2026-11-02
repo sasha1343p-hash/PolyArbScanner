@@ -100,31 +100,74 @@ class FeatureExtractor:
         if 'timestamp' in price_df.columns:
             price_df = price_df.sort_values('timestamp').reset_index(drop=True)
         
+        # Проверяем минимальное количество данных
+        if len(price_df) < 10:
+            logger.warning(f"Рынок {market_id}: недостаточно данных ({len(price_df)} < 10)")
+            return self._create_empty_features()
+        
         features = {}
         
-        # 1. Статистики цен
+        # КРИТИЧЕСКИ ВАЖНЫЕ ФИЧИ
+        
+        # 1. Время до экспирации (САМАЯ ВАЖНАЯ ФИЧА!)
+        days_to_expiry = self._calculate_days_to_expiry(metadata.end_date)
+        features['days_to_expiry'] = days_to_expiry
+        
+        # 2. Тип рынка (one-hot encoding)
+        market_type = self._classify_market_type(metadata.question)
+        features['market_type_crypto'] = 1.0 if market_type == 'crypto' else 0.0
+        features['market_type_politics'] = 1.0 if market_type == 'politics' else 0.0
+        features['market_type_sports'] = 1.0 if market_type == 'sports' else 0.0
+        features['market_type_other'] = 1.0 if market_type == 'other' else 0.0
+        
+        # СТАНДАРТНЫЕ ФИЧИ
+        
+        # 3. Статистики цен
         features.update(self._extract_price_statistics(price_df))
         
-        # 2. Волатильность
+        # 4. Волатильность
         features.update(self._extract_volatility_features(price_df))
         
-        # 3. Тренд
+        # 5. Тренд
         features.update(self._extract_trend_features(price_df))
         
-        # 4. Моментум
+        # 6. Моментум
         features.update(self._extract_momentum_features(price_df))
         
-        # 5. Объёмные метрики
+        # 7. Объёмные метрики
         features.update(self._extract_volume_features(price_df))
         
-        # 6. Временные фичи
+        # 8. Временные фичи
         features.update(self._extract_temporal_features(metadata))
         
-        # 7. Ценовые паттерны
+        # 9. Ценовые паттерны
         features.update(self._extract_price_patterns(price_df))
         
-        # 8. Контекстные фичи
+        # 10. Контекстные фичи (категории)
         features.update(self._extract_context_features(metadata))
+        
+        # ДОПОЛНИТЕЛЬНЫЕ ФИЧИ
+        
+        # 11. Улучшенная волатильность
+        yes_prices = price_df['yes_price'].values
+        if len(yes_prices) > 1:
+            features['volatility'] = np.std(np.diff(yes_prices))
+            features['volatility_ratio'] = np.std(yes_prices) / np.mean(yes_prices) if np.mean(yes_prices) > 0 else 0
+        else:
+            features['volatility'] = 0.0
+            features['volatility_ratio'] = 0.0
+        
+        # 12. Улучшенный тренд
+        if len(yes_prices) > 1:
+            trend_coeffs = np.polyfit(range(len(yes_prices)), yes_prices, 1)
+            features['trend'] = trend_coeffs[0]
+            features['trend_strength'] = abs(trend_coeffs[0])
+        else:
+            features['trend'] = 0.0
+            features['trend_strength'] = 0.0
+        
+        # 13. Количество точек данных
+        features['data_points'] = len(yes_prices)
         
         # Если feature_names уже установлен (например, из модели), используем его
         if self.feature_names:
@@ -475,6 +518,35 @@ class FeatureExtractor:
         rsi = 100 - (100 / (1 + rs))
         
         return float(rsi)
+    
+    def _calculate_days_to_expiry(self, end_date: Optional[datetime]) -> int:
+        """Вычисляет количество дней до экспирации."""
+        if not end_date:
+            return 30  # Дефолт
+        
+        try:
+            now = datetime.now()
+            delta = end_date - now
+            return max(0, delta.days)
+        except:
+            return 30
+    
+    def _classify_market_type(self, question: str) -> str:
+        """Классифицирует тип рынка по вопросу."""
+        question_lower = question.lower()
+        
+        crypto_keywords = ['btc', 'bitcoin', 'eth', 'ethereum', 'crypto', 'sol', 'solana', 'price']
+        politics_keywords = ['trump', 'biden', 'election', 'president', 'congress', 'senate', 'democrat', 'republican']
+        sports_keywords = ['nfl', 'nba', 'mlb', 'nhl', 'super bowl', 'world series', 'championship']
+        
+        if any(kw in question_lower for kw in crypto_keywords):
+            return 'crypto'
+        elif any(kw in question_lower for kw in politics_keywords):
+            return 'politics'
+        elif any(kw in question_lower for kw in sports_keywords):
+            return 'sports'
+        else:
+            return 'other'
     
     def _handle_missing_values(self, features: pd.Series) -> pd.Series:
         """Обрабатывает пропущенные значения."""

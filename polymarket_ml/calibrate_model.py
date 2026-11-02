@@ -86,8 +86,8 @@ class ModelCalibrator:
         
         return features_df
     
-    def calibrate(self, method='isotonic'):
-        """Калибрует модель"""
+    def calibrate(self, method='sigmoid'):
+        """Калибрует модель методом Platt scaling (лучше для малых данных)"""
         # Загружаем модель
         try:
             model, scaler, model_bundle = self.load_model()
@@ -179,8 +179,8 @@ class ModelCalibrator:
             warnings.simplefilter("ignore")
             calibrated_model = CalibratedClassifierCV(
                 model, 
-                method=method, 
-                cv=min(5, len(unique_classes) * 2)  # Уменьшаем cv если мало данных
+                method=method,  # 'sigmoid' вместо 'isotonic'
+                cv=3  # Меньше фолдов для малых данных
             )
             calibrated_model.fit(X_scaled, y)
         
@@ -222,7 +222,7 @@ class ModelCalibrator:
 
 if __name__ == "__main__":
     calibrator = ModelCalibrator()
-    success = calibrator.calibrate(method='isotonic')
+    success = calibrator.calibrate(method='sigmoid')  # sigmoid = Platt scaling
     
     if success:
         print("\n✅ Калибровка завершена успешно!")

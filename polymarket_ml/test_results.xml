@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="6" failures="7" skipped="0" tests="35" time="106.901" timestamp="2026-11-01T18:48:55.846455+08:00" hostname="LAPTOP-J197G1AH"><testcase classname="tests.test_feature_extractor" name="test_feature_extractor_initialization" time="0.003" /><testcase classname="tests.test_feature_extractor" name="test_extract_price_statistics" time="0.002"><error message="failed on setup with &quot;ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?&quot;">pandas/_libs/tslibs/offsets.pyx:7998: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7859: in pandas._libs.tslibs.offsets._validate_to_offset_alias
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Did you mean h?
+
+During handling of the above exception, another exception occurred:
+..\tests\test_feature_extractor.py:19: in sample_price_df
+    'timestamp': pd.date_range('2024-01-01', periods=n, freq='H'),
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pandas\core\indexes\datetimes.py:2727: in date_range
+    freq = to_offset(freq)
+           ^^^^^^^^^^^^^^^
+pandas/_libs/tslibs/offsets.pyx:7903: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:8048: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?</error></testcase><testcase classname="tests.test_feature_extractor" name="test_extract_volatility_features" time="0.001"><error message="failed on setup with &quot;ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?&quot;">pandas/_libs/tslibs/offsets.pyx:7998: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7859: in pandas._libs.tslibs.offsets._validate_to_offset_alias
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Did you mean h?
+
+During handling of the above exception, another exception occurred:
+..\tests\test_feature_extractor.py:19: in sample_price_df
+    'timestamp': pd.date_range('2024-01-01', periods=n, freq='H'),
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pandas\core\indexes\datetimes.py:2727: in date_range
+    freq = to_offset(freq)
+           ^^^^^^^^^^^^^^^
+pandas/_libs/tslibs/offsets.pyx:7903: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:8048: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?</error></testcase><testcase classname="tests.test_feature_extractor" name="test_extract_momentum_features" time="0.001"><error message="failed on setup with &quot;ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?&quot;">pandas/_libs/tslibs/offsets.pyx:7998: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7859: in pandas._libs.tslibs.offsets._validate_to_offset_alias
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Did you mean h?
+
+During handling of the above exception, another exception occurred:
+..\tests\test_feature_extractor.py:19: in sample_price_df
+    'timestamp': pd.date_range('2024-01-01', periods=n, freq='H'),
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pandas\core\indexes\datetimes.py:2727: in date_range
+    freq = to_offset(freq)
+           ^^^^^^^^^^^^^^^
+pandas/_libs/tslibs/offsets.pyx:7903: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:8048: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?</error></testcase><testcase classname="tests.test_feature_extractor" name="test_extract_temporal_features" time="0.001"><error message="failed on setup with &quot;ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?&quot;">pandas/_libs/tslibs/offsets.pyx:7998: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7859: in pandas._libs.tslibs.offsets._validate_to_offset_alias
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Did you mean h?
+
+During handling of the above exception, another exception occurred:
+..\tests\test_feature_extractor.py:19: in sample_price_df
+    'timestamp': pd.date_range('2024-01-01', periods=n, freq='H'),
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pandas\core\indexes\datetimes.py:2727: in date_range
+    freq = to_offset(freq)
+           ^^^^^^^^^^^^^^^
+pandas/_libs/tslibs/offsets.pyx:7903: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:8048: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?</error></testcase><testcase classname="tests.test_feature_extractor" name="test_extract_category_features" time="0.001"><error message="failed on setup with &quot;ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?&quot;">pandas/_libs/tslibs/offsets.pyx:7998: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7859: in pandas._libs.tslibs.offsets._validate_to_offset_alias
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Did you mean h?
+
+During handling of the above exception, another exception occurred:
+..\tests\test_feature_extractor.py:19: in sample_price_df
+    'timestamp': pd.date_range('2024-01-01', periods=n, freq='H'),
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pandas\core\indexes\datetimes.py:2727: in date_range
+    freq = to_offset(freq)
+           ^^^^^^^^^^^^^^^
+pandas/_libs/tslibs/offsets.pyx:7903: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:8048: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?</error></testcase><testcase classname="tests.test_feature_extractor" name="test_extract_rsi" time="0.001"><error message="failed on setup with &quot;ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?&quot;">pandas/_libs/tslibs/offsets.pyx:7998: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7859: in pandas._libs.tslibs.offsets._validate_to_offset_alias
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Did you mean h?
+
+During handling of the above exception, another exception occurred:
+..\tests\test_feature_extractor.py:19: in sample_price_df
+    'timestamp': pd.date_range('2024-01-01', periods=n, freq='H'),
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pandas\core\indexes\datetimes.py:2727: in date_range
+    freq = to_offset(freq)
+           ^^^^^^^^^^^^^^^
+pandas/_libs/tslibs/offsets.pyx:7903: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:8048: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?</error></testcase><testcase classname="tests.test_feature_extractor" name="test_handle_empty_dataframe" time="0.005" /><testcase classname="tests.test_feature_extractor" name="test_extract_features_batch" time="0.002"><failure message="ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?">pandas/_libs/tslibs/offsets.pyx:7998: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7859: in pandas._libs.tslibs.offsets._validate_to_offset_alias
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Did you mean h?
+
+During handling of the above exception, another exception occurred:
+..\tests\test_feature_extractor.py:167: in test_extract_features_batch
+    'timestamp': list(pd.date_range('2024-01-01', periods=100, freq='H')) * 2,
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pandas\core\indexes\datetimes.py:2727: in date_range
+    freq = to_offset(freq)
+           ^^^^^^^^^^^^^^^
+pandas/_libs/tslibs/offsets.pyx:7903: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:8048: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?</failure></testcase><testcase classname="tests.test_feature_extractor" name="test_normalization" time="0.002"><failure message="ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?">pandas/_libs/tslibs/offsets.pyx:7998: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7859: in pandas._libs.tslibs.offsets._validate_to_offset_alias
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Did you mean h?
+
+During handling of the above exception, another exception occurred:
+..\tests\test_feature_extractor.py:197: in test_normalization
+    'timestamp': list(pd.date_range('2024-01-01', periods=50, freq='H')) * 3,
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pandas\core\indexes\datetimes.py:2727: in date_range
+    freq = to_offset(freq)
+           ^^^^^^^^^^^^^^^
+pandas/_libs/tslibs/offsets.pyx:7903: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:8048: in pandas._libs.tslibs.offsets.to_offset
+    ???
+pandas/_libs/tslibs/offsets.pyx:7809: in pandas._libs.tslibs.offsets.raise_invalid_freq
+    ???
+E   ValueError: Invalid frequency: H. Failed to parse with error message: ValueError('Invalid frequency: H. Did you mean h?') Did you mean h?</failure></testcase><testcase classname="tests.test_feature_extractor" name="test_detect_category" time="0.003" /><testcase classname="tests.test_feature_extractor" name="test_calculate_rsi" time="0.001" /><testcase classname="tests.test_integration.TestFullPipeline" name="test_feature_extraction_to_prediction" time="8.685" /><testcase classname="tests.test_integration.TestFullPipeline" name="test_model_monitoring_pipeline" time="1.640"><failure message="AssertionError: Не должно быть дрейфа на тех же данных&#10;assert not True&#10;[+1 more line; full report in element text]">..\tests\test_integration.py:148: in test_model_monitoring_pipeline
+    assert not report.has_drift, "Не должно быть дрейфа на тех же данных"
+E   AssertionError: Не должно быть дрейфа на тех же данных
+E   assert not True
+E    +  where True = DriftReport(has_drift=True, psi_values={'price_mean_24h': 0.3159230082257936, 'price_std_24h': 0.060924449121387315, 'momentum_24h': 0.09238749592803729, 'days_to_expiry': 3.211111642579164e-21}, ks_values={'price_mean_24h': np.float64(0.07400000000000001), 'price_std_24h': np.float64(0.05033333333333323), 'momentum_24h': np.float64(0.05399999999999999), 'days_to_expiry': np.float64(0.0)}, drifted_features=['price_mean_24h'], timestamp='2026-11-01T18:49:14.458177', recommendation='Обнаружен дрейф. Планируется переобучение модели.').has_drift</failure></testcase><testcase classname="tests.test_integration.TestFullPipeline" name="test_feature_extractor_consistency" time="2.547" /><testcase classname="tests.test_integration.TestFullPipeline" name="test_model_reproducibility" time="13.553" /><testcase classname="tests.test_integration.TestFullPipeline" name="test_edge_cases" time="0.686"><failure message="ValueError: Can only compare identically-labeled Series objects">..\tests\test_integration.py:239: in test_edge_cases
+    small_prices = price_df[price_df['market_id'] == small_metadata['id']].head(5)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pandas\core\ops\common.py:140: in new_method
+    return method(self, other)
+           ^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pandas\core\arraylike.py:45: in __eq__
+    return self._cmp_method(other, operator.eq)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\pandas\core\series.py:7362: in _cmp_method
+    raise ValueError("Can only compare identically-labeled Series objects")
+E   ValueError: Can only compare identically-labeled Series objects</failure></testcase><testcase classname="tests.test_integration.TestDataQuality" name="test_no_nan_in_features" time="1.689" /><testcase classname="tests.test_integration.TestDataQuality" name="test_no_inf_in_features" time="1.661" /><testcase classname="tests.test_integration.TestDataQuality" name="test_feature_ranges" time="1.818"><failure message="AssertionError: price_current должен быть в [0, 1]&#10;assert (np.False_)&#10; +  where np.False_ = all()&#10; +    where all = market-000    1.701351\nmarket-001    0.079413\nmarket-002    1.403587\nmarket-003   -1.032199\nmarket-004    1.832276\n                ...   \nmarket-145    0.572773\nmarket-146    0.766560\nmarket-147    0.475655\nmarket-148    0.005036\nmarket-149   -0.763978\nName: price_current, Length: 150, dtype: float64 &gt;= 0.all">..\tests\test_integration.py:285: in test_feature_ranges
+    assert (X['price_current'] &gt;= 0).all() and (X['price_current'] &lt;= 1).all(), \
+E   AssertionError: price_current должен быть в [0, 1]
+E   assert (np.False_)
+E    +  where np.False_ = all()
+E    +    where all = market-000    1.701351\nmarket-001    0.079413\nmarket-002    1.403587\nmarket-003   -1.032199\nmarket-004    1.832276\n                ...   \nmarket-145    0.572773\nmarket-146    0.766560\nmarket-147    0.475655\nmarket-148    0.005036\nmarket-149   -0.763978\nName: price_current, Length: 150, dtype: float64 &gt;= 0.all</failure></testcase><testcase classname="tests.test_integration.TestPerformance" name="test_inference_speed" time="9.821" /><testcase classname="tests.test_integration.TestPerformance" name="test_batch_inference_speed" time="11.219" /><testcase classname="tests.test_model" name="test_model_initialization" time="0.001" /><testcase classname="tests.test_model" name="test_model_training" time="5.284" /><testcase classname="tests.test_model" name="test_model_predict" time="5.345" /><testcase classname="tests.test_model" name="test_model_predict_with_confidence" time="5.371" /><testcase classname="tests.test_model" name="test_model_predict_untrained" time="0.002" /><testcase classname="tests.test_model" name="test_model_metrics" time="5.463" /><testcase classname="tests.test_model" name="test_model_feature_importance" time="5.390"><failure message="AssertionError: assert False&#10; +  where False = isinstance(np.float32(0.19936997), (&lt;class 'int'&gt;, &lt;class 'float'&gt;))">..\tests\test_model.py:157: in test_model_feature_importance
+    assert isinstance(score, (int, float))
+E   AssertionError: assert False
+E    +  where False = isinstance(np.float32(0.19936997), (&lt;class 'int'&gt;, &lt;class 'float'&gt;))</failure></testcase><testcase classname="tests.test_model" name="test_model_save_load" time="5.423" /><testcase classname="tests.test_model" name="test_model_load_nonexistent" time="0.001" /><testcase classname="tests.test_model" name="test_model_insufficient_data" time="0.002" /><testcase classname="tests.test_model" name="test_model_with_nan_values" time="3.718" /><testcase classname="tests.test_model" name="test_model_imbalanced_classes" time="3.370"><failure message="ValueError: y contains previously unseen labels: [np.int64(1)]">..\tests\test_model.py:241: in test_model_imbalanced_classes
+    metrics = model.train(X, y)
+              ^^^^^^^^^^^^^^^^^
+ml_oracle\model.py:263: in train
+    lgb_model, lgb_score = self._train_lightgbm(X, y, tscv)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ml_oracle\model.py:391: in _train_lightgbm
+    model.fit(
+venv\Lib\site-packages\lightgbm\sklearn.py:1702: in fit
+    valid_sets.append((valid_x, self._le.transform(valid_y)))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\sklearn\preprocessing\_label.py:144: in transform
+    return _encode(y, uniques=self.classes_)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+venv\Lib\site-packages\sklearn\utils\_encode.py:236: in _encode
+    raise ValueError(f"y contains previously unseen labels: {diff}")
+E   ValueError: y contains previously unseen labels: [np.int64(1)]</failure></testcase><testcase classname="tests.test_model" name="test_model_metrics_to_dict" time="5.312" /></testsuite></testsuites>

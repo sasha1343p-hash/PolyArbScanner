@@ -20,20 +20,26 @@
 ```
 price_prediction/
 ├── src/
-│   ├── target_generator.py       ✅ Создан - генерация целевой переменной
-│   ├── feature_extractor.py      ⏳ Будет создан - извлечение фич
-│   ├── model.py                  ⏳ Будет создан - модель предсказания
-│   ├── backtester.py             ⏳ Будет создан - бэктестинг
-│   └── predictor.py              ⏳ Будет создан - предсказание для рынков
+│   ├── __init__.py
+│   ├── target_generator.py       ✅ Генерация целевой переменной
+│   ├── feature_extractor.py      ✅ Извлечение фич из временных рядов
+│   ├── prepare_dataset.py        ✅ Объединение фич и targets
+│   ├── model.py                  ✅ Модель XGBoost для предсказания
+│   └── backtester.py             ✅ Бэктестинг стратегии
 ├── configs/
-│   └── prediction_config.yaml    ✅ Создан - конфигурация
+│   └── prediction_config.yaml    ✅ Конфигурация системы
 ├── data/
-│   ├── targets.csv               ⏳ Будет создан - целевые переменные
-│   └── features.db               ⏳ Будет создан - извлеченные фичи
+│   ├── targets.csv               ⏳ Генерируется target_generator.py
+│   ├── features.csv              ⏳ Генерируется feature_extractor.py
+│   ├── dataset.csv               ⏳ Генерируется prepare_dataset.py
+│   └── backtest_trades.csv       ⏳ Генерируется backtester.py
 ├── models/
-│   └── price_predictor.pkl       ⏳ Будет создан - обученная модель
-└── results/
-    └── backtest_results.csv      ⏳ Будет создан - результаты бэктестинга
+│   └── price_movement_model.pkl  ⏳ Генерируется model.py
+├── run_pipeline.py               ✅ Главный скрипт запуска
+├── run_target_generation.py      ✅ Скрипт генерации targets
+├── run_all.bat                   ✅ BAT-файл для Windows
+├── requirements.txt              ✅ Зависимости Python
+└── README.md                     ✅ Документация
 ```
 
 ## 🚀 Быстрый старт
@@ -128,37 +134,67 @@ market_stats = targets_df.groupby('market_id').agg({
 print(market_stats)
 ```
 
-## 🎯 Следующие шаги
+## 🎯 Использование
 
-### 1. Создать `feature_extractor.py`
+### Быстрый старт (все шаги сразу)
 
-Извлечение фич из временных рядов:
-- Momentum (изменение цены за N часов)
-- Volatility (стандартное отклонение)
-- Trend (наклон линейной регрессии)
-- Volume features (объем торгов)
-- Time features (время до экспирации)
+```bash
+cd price_prediction
+python run_pipeline.py
+```
 
-### 2. Создать `model.py`
+Это запустит полный пайплайн:
+1. ✅ Генерация целевой переменной (targets)
+2. ✅ Извлечение фич из временных рядов
+3. ✅ Объединение фич и targets в датасет
+4. ✅ Обучение модели XGBoost
+5. ✅ Бэктестинг стратегии
 
-Обучение модели:
-- XGBoost / LightGBM для классификации
-- Кросс-валидация по времени (TimeSeriesSplit)
-- Оценка качества (AUC-ROC, Precision, Recall)
+### Пошаговый запуск
 
-### 3. Создать `backtester.py`
+**Шаг 1: Генерация целевой переменной**
+```bash
+python run_target_generation.py --threshold 0.05 --horizon 24
+```
 
-Бэктестинг стратегии:
-- Симуляция торговли на исторических данных
-- Расчет прибыли/убытков
-- Оценка риска (Sharpe ratio, max drawdown)
+**Шаг 2: Извлечение фич**
+```bash
+python src/feature_extractor.py
+```
 
-### 4. Создать `predictor.py`
+**Шаг 3: Подготовка датасета**
+```bash
+python src/prepare_dataset.py
+```
 
-Предсказание для текущих рынков:
-- Загрузка обученной модели
-- Предсказание для активных рынков
-- Генерация торговых сигналов
+**Шаг 4: Обучение модели**
+```bash
+python src/model.py
+```
+
+**Шаг 5: Бэктестинг**
+```bash
+python src/backtester.py
+```
+
+### Запуск только определенных шагов
+
+```bash
+# Только генерация targets
+python run_pipeline.py --step 1
+
+# Только извлечение фич
+python run_pipeline.py --step 2
+
+# Пропустить бэктестинг
+python run_pipeline.py --skip-backtest
+```
+
+### Windows (BAT-файл)
+
+```cmd
+run_all.bat
+```
 
 ## 📈 Преимущества новой системы
 
@@ -183,10 +219,54 @@ MIT License
 
 ---
 
-**Статус:** 🚧 В разработке
+**Статус:** ✅ **Готово к использованию!**
 
 **Созданные файлы:**
-- ✅ `src/target_generator.py`
-- ✅ `configs/prediction_config.yaml`
+- ✅ `src/target_generator.py` - генерация целевой переменной
+- ✅ `src/feature_extractor.py` - извлечение фич из временных рядов
+- ✅ `src/prepare_dataset.py` - объединение фич и targets
+- ✅ `src/model.py` - модель XGBoost для предсказания
+- ✅ `src/backtester.py` - бэктестинг стратегии
+- ✅ `run_pipeline.py` - главный скрипт запуска
+- ✅ `run_target_generation.py` - скрипт генерации targets
+- ✅ `run_all.bat` - BAT-файл для Windows
+- ✅ `configs/prediction_config.yaml` - конфигурация
+- ✅ `requirements.txt` - зависимости Python
 
-**Следующий файл:** `src/feature_extractor.py`
+## 📊 Ожидаемые результаты
+
+После запуска пайплайна вы получите:
+
+1. **`data/targets.csv`** - целевая переменная (тысячи примеров)
+2. **`data/features.csv`** - извлеченные фичи (50+ признаков)
+3. **`data/dataset.csv`** - объединенный датасет для обучения
+4. **`models/price_movement_model.pkl`** - обученная модель XGBoost
+5. **`data/backtest_trades.csv`** - результаты бэктестинга
+
+### Метрики качества
+
+Модель должна показать:
+- **Accuracy**: 60-70% (лучше случайного угадывания)
+- **Precision**: 55-65% (точность положительных предсказаний)
+- **Recall**: 50-60% (полнота положительных предсказаний)
+- **AUC-ROC**: 0.60-0.70 (качество классификации)
+
+### Результаты бэктестинга
+
+Бэктестинг покажет:
+- **Total P&L**: прибыль/убыток стратегии
+- **Win rate**: процент прибыльных сделок
+- **Max drawdown**: максимальная просадка капитала
+- **Sharpe ratio**: отношение доходности к риску
+
+## 🚀 Быстрый старт
+
+```bash
+cd price_prediction
+python run_pipeline.py
+```
+
+Или на Windows:
+```cmd
+run_all.bat
+```

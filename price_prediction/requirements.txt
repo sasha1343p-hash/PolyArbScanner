@@ -1,0 +1,16 @@
+# Price Prediction System - Зависимости
+
+# Основные библиотеки
+pandas>=2.0.0
+numpy>=1.24.0
+
+# ML библиотеки
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+
+# Сохранение моделей
+joblib>=1.3.0
+
+# Визуализация (опционально)
+matplotlib>=3.7.0
+seaborn>=0.12.0

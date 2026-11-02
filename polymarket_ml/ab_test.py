@@ -12,7 +12,7 @@ class ABTester:
         self.db_path = db_path
         
     def load_recent_markets(self, days=7):
-        """Загружает рынки за последние N дней"""
+        """Загружает завершенные рынки за последние N дней"""
         if not os.path.exists(self.db_path):
             logging.error(f"❌ База данных не найдена: {self.db_path}")
             return pd.DataFrame()
@@ -22,25 +22,26 @@ class ABTester:
         try:
             cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
             
+            # Загружаем завершенные рынки с известными исходами
             markets_df = pd.read_sql_query('''
-                SELECT m.id, m.question, m.end_date, m.resolution, m.created_at,
-                       p.yes_price, p.volume, p.timestamp
-                FROM market_metadata m
-                LEFT JOIN (
-                    SELECT market_id, yes_price, volume, timestamp,
-                           ROW_NUMBER() OVER (PARTITION BY market_id ORDER BY timestamp DESC) as rn
-                    FROM price_history
-                ) p ON m.id = p.market_id AND p.rn = 1
-                WHERE m.created_at > ?
-                ORDER BY m.created_at DESC
+                SELECT mm.id, mm.question, mm.resolution, mm.end_date,
+                       ph.yes_price as last_price,
+                       ph.volume as last_volume
+                FROM market_metadata mm
+                JOIN price_history ph ON mm.id = ph.market_id
+                WHERE mm.resolution IS NOT NULL
+                  AND mm.end_date > ?
+                GROUP BY mm.id
+                ORDER BY mm.end_date DESC
             ''', conn, params=(cutoff_date,))
             
             conn.close()
             
             if markets_df.empty:
-                logging.warning(f"⚠️  Нет рынков за последние {days} дней")
+                logging.warning(f"⚠️  Нет завершенных рынков за последние {days} дней")
+                logging.info("💡 Попробуйте увеличить период: python ab_test.py --days 30")
             else:
-                logging.info(f"✅ Загружено {len(markets_df)} рынков")
+                logging.info(f"✅ Загружено {len(markets_df)} завершенных рынков")
             
             return markets_df
             
@@ -55,17 +56,22 @@ class ABTester:
         
         results = []
         
-        for _, market in markets_df.iterrows():
+        for idx, market in markets_df.iterrows():
             market_id = market['id']
             question = market['question']
-            market_price = market['yes_price'] if pd.notna(market['yes_price']) else 0.5
+            market_price = market['last_price'] if pd.notna(market['last_price']) else 0.5
+            actual_resolution = market['resolution']
             
             # Эвристика: используем текущую цену как вероятность
-            # (в реальности можно добавить более сложную логику)
             heuristic_proba = market_price
             
-            # Вычисляем edge (в данном случае 0, т.к. эвристика = рыночная цена)
+            # Вычисляем edge
             edge = heuristic_proba - market_price
+            
+            # Определяем, было ли предсказание правильным
+            predicted_yes = heuristic_proba > 0.5
+            actual_yes = (actual_resolution == 'YES')
+            correct = (predicted_yes == actual_yes)
             
             results.append({
                 'market_id': market_id,
@@ -74,8 +80,14 @@ class ABTester:
                 'oracle_proba': heuristic_proba,
                 'edge': edge,
                 'abs_edge': abs(edge),
-                'oracle_type': 'heuristic'
+                'oracle_type': 'heuristic',
+                'actual_resolution': actual_resolution,
+                'correct': correct
             })
+            
+            # Прогресс
+            if (idx + 1) % 10 == 0:
+                logging.info(f"  Обработано {idx + 1}/{len(markets_df)} рынков")
         
         return pd.DataFrame(results)
     
@@ -115,7 +127,8 @@ class ABTester:
         for idx, market in markets_df.iterrows():
             market_id = market['id']
             question = market['question']
-            market_price = market['yes_price'] if pd.notna(market['yes_price']) else 0.5
+            market_price = market['last_price'] if pd.notna(market['last_price']) else 0.5
+            actual_resolution = market['resolution']
             
             # Получаем историю цен для этого рынка
             market_prices = price_df[price_df['market_id'] == market_id].copy()
@@ -123,6 +136,7 @@ class ABTester:
             if market_prices.empty:
                 # Если нет истории, используем рыночную цену
                 ml_proba = market_price
+                confidence = 0.0
             else:
                 # Создаём метаданные
                 metadata = MarketMetadata(
@@ -140,13 +154,20 @@ class ABTester:
                     
                     if ml_proba is None:
                         ml_proba = market_price
+                        confidence = 0.0
                         
                 except Exception as e:
                     logging.warning(f"⚠️  Ошибка предсказания для {market_id}: {e}")
                     ml_proba = market_price
+                    confidence = 0.0
             
             # Вычисляем edge
             edge = ml_proba - market_price
+            
+            # Определяем, было ли предсказание правильным
+            predicted_yes = ml_proba > 0.5
+            actual_yes = (actual_resolution == 'YES')
+            correct = (predicted_yes == actual_yes)
             
             results.append({
                 'market_id': market_id,
@@ -155,7 +176,10 @@ class ABTester:
                 'oracle_proba': ml_proba,
                 'edge': edge,
                 'abs_edge': abs(edge),
-                'oracle_type': 'ml'
+                'oracle_type': 'ml',
+                'actual_resolution': actual_resolution,
+                'correct': correct,
+                'confidence': confidence
             })
             
             # Прогресс
@@ -182,6 +206,10 @@ class ABTester:
         logging.info(f"   Рынков с |edge| > 0.15: {(heuristic_df['abs_edge'] > 0.15).sum()}")
         logging.info(f"   Рынков с |edge| > 0.20: {(heuristic_df['abs_edge'] > 0.20).sum()}")
         
+        # Точность эвристики
+        heuristic_accuracy = heuristic_df['correct'].mean()
+        logging.info(f"   Точность предсказаний: {heuristic_accuracy:.1%}")
+        
         # Статистики по ML
         logging.info("\n🤖 ML-ОРАКУЛ:")
         logging.info(f"   Всего рынков: {len(ml_df)}")
@@ -190,14 +218,35 @@ class ABTester:
         logging.info(f"   Рынков с |edge| > 0.15: {(ml_df['abs_edge'] > 0.15).sum()}")
         logging.info(f"   Рынков с |edge| > 0.20: {(ml_df['abs_edge'] > 0.20).sum()}")
         
+        # Точность ML
+        ml_accuracy = ml_df['correct'].mean()
+        logging.info(f"   Точность предсказаний: {ml_accuracy:.1%}")
+        
+        # Средняя уверенность
+        if 'confidence' in ml_df.columns:
+            avg_confidence = ml_df['confidence'].mean()
+            logging.info(f"   Средняя уверенность: {avg_confidence:.1%}")
+        
         # Сравнение
         logging.info("\n📈 СРАВНЕНИЕ:")
+        
+        # Сравнение по edge
         if ml_df['abs_edge'].mean() > heuristic_df['abs_edge'].mean():
             improvement = ml_df['abs_edge'].mean() - heuristic_df['abs_edge'].mean()
             logging.info(f"   ✅ ML находит БОЛЬШЕ возможностей (средний edge выше на {improvement:.3f})")
         else:
             logging.info("   ⚠️  Эвристика находит БОЛЬШЕ возможностей (средний edge выше)")
             logging.info("   💡 ML модель может быть недообучена или данных недостаточно")
+        
+        # Сравнение по точности
+        if ml_accuracy > heuristic_accuracy:
+            accuracy_diff = ml_accuracy - heuristic_accuracy
+            logging.info(f"   ✅ ML ТОЧНЕЕ (точность выше на {accuracy_diff:.1%})")
+        elif ml_accuracy < heuristic_accuracy:
+            accuracy_diff = heuristic_accuracy - ml_accuracy
+            logging.info(f"   ⚠️  Эвристика ТОЧНЕЕ (точность выше на {accuracy_diff:.1%})")
+        else:
+            logging.info("   ➖ Точность одинаковая")
         
         # Распределение edge
         logging.info("\n📊 РАСПРЕДЕЛЕНИЕ EDGE:")
@@ -216,14 +265,24 @@ class ABTester:
         top_ml = ml_df.nlargest(5, 'abs_edge')
         for idx, row in top_ml.iterrows():
             direction = "BUY YES" if row['edge'] > 0 else "BUY NO"
-            logging.info(f"   {row['market_id']}: edge={row['edge']:+.3f} ({direction})")
+            correct_mark = "✅" if row['correct'] else "❌"
+            logging.info(f"   {correct_mark} {row['market_id']}: edge={row['edge']:+.3f} ({direction})")
             logging.info(f"      {row['question'][:60]}...")
+        
+        # Топ рынков по уверенности
+        if 'confidence' in ml_df.columns:
+            logging.info("\n🎯 ТОП-5 РЫНКОВ ПО УВЕРЕННОСТИ (ML):")
+            top_conf = ml_df.nlargest(5, 'confidence')
+            for idx, row in top_conf.iterrows():
+                correct_mark = "✅" if row['correct'] else "❌"
+                logging.info(f"   {correct_mark} {row['market_id']}: confidence={row['confidence']:.1%}, edge={row['edge']:+.3f}")
+                logging.info(f"      {row['question'][:60]}...")
         
         logging.info("=" * 70)
     
     def run_ab_test(self, days=7):
         """Запускает полный A/B тест"""
-        logging.info(f"Загрузка рынков за последние {days} дней...")
+        logging.info(f"Загрузка завершенных рынков за последние {days} дней...")
         markets_df = self.load_recent_markets(days)
         
         if markets_df.empty:
@@ -250,5 +309,11 @@ class ABTester:
         logging.info("\n✅ Результаты сохранены в ab_test_heuristic.csv и ab_test_ml.csv")
 
 if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='A/B тестирование эвристики vs ML')
+    parser.add_argument('--days', type=int, default=7, help='Период в днях (по умолчанию: 7)')
+    args = parser.parse_args()
+    
     tester = ABTester()
-    tester.run_ab_test(days=7)
+    tester.run_ab_test(days=args.days)
